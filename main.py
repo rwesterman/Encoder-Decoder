@@ -37,6 +37,7 @@ def _parse_args():
     parser.add_argument('--no_reverse_input', dest='reverse_input', default=True, action='store_false', help='disable_input_reversal')
     parser.add_argument('--emb_dropout', type=float, default=0.2, help='input dropout rate')
     parser.add_argument('--rnn_dropout', type=float, default=0.2, help='dropout rate internal to encoder RNN')
+    parser.add_argument('--dec_dropout', type=float, default=0.2, help='dropout for input to decoder')
     args = parser.parse_args()
     return args
 
@@ -126,26 +127,51 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
     train_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
     test_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
 
-    # Create indexed input
-    input_max_len = np.max(np.asarray([len(ex.x_indexed) for ex in train_data]))
-    all_train_input_data = make_padded_input_tensor(train_data, input_indexer, input_max_len, args.reverse_input)
-    all_test_input_data = make_padded_input_tensor(test_data, input_indexer, input_max_len, args.reverse_input)
-
-    output_max_len = np.max(np.asarray([len(ex.y_indexed) for ex in train_data]))
-    all_train_output_data = make_padded_output_tensor(train_data, output_indexer, output_max_len)
-    all_test_output_data = make_padded_output_tensor(test_data, output_indexer, output_max_len)
-
-    print("Train length: %i" % input_max_len)
-    print("Train output length: %i" % np.max(np.asarray([len(ex.y_indexed) for ex in train_data])))
-    print("Train matrix: %s; shape = %s" % (all_train_input_data, all_train_input_data.shape))
+    output_max_len = args.decoder_len_limit
 
     # Create model
     model_input_emb = EmbeddingLayer(args.input_dim, len(input_indexer), args.emb_dropout)
-    model_enc = RNNEncoder(args.input_dim, args.hidden_size, args.rnn_dropout, args.bidirectional)
     model_output_emb = EmbeddingLayer(args.output_dim, len(output_indexer), args.emb_dropout)
+    model_enc = RNNEncoder(args.input_dim, args.hidden_size, args.rnn_dropout, args.bidirectional)
+    # len(output_indexer) is 153 and represents the size of the output vocabulary
+    model_dec = RNNDecoder(args.output_dim, args.hidden_size, len(output_indexer), dropout=args.dec_dropout)
+
+    # pack all models to pass to decode_forward function
+    all_models = (model_input_emb, model_output_emb, model_enc, model_dec)
+    # Create optimizers for every model
+    inp_emb_optim = torch.optim.Adam(model_input_emb.parameters(), 1e-3)
+    out_emb_optim = torch.optim.Adam(model_output_emb.parameters(), 1e-3)
+    enc_optim = torch.optim.Adam(model_enc.parameters(), 1e-3)
+    dec_optim = torch.optim.Adam(model_dec.parameters(), 1e-3)
+
+    # Iterate through epochs
+    for epoch in range(1, args.epochs + 1):
+        # Loop over all examples in training data
+        for pair_idx in range(len(train_data)):
+            # extract data from train_data
+            print("In: {}, out: {}".format(train_data[pair_idx].x_indexed, train_data[pair_idx].y_indexed))
+            # Zero gradients
+            inp_emb_optim.zero_grad()
+            out_emb_optim.zero_grad()
+            enc_optim.zero_grad()
+            dec_optim.zero_grad()
+
+            # Forward Pass
+            loss = decode_forward(train_data, all_models, pair_idx, )
+
+            # Backpropogation
+
+            # Optimizer step
+
+
+
     # Loop over epochs, loop over examples, given some indexed words, call encode_input_for_decoder, then call your
     # decoder, accumulate losses, update parameters
     raise Exception("Implement the rest of me to train your parser")
+
+def decode_forward(train_data, all_models, pair_idx):
+    (model_input_emb, model_output_emb, model_enc, model_dec) = all_models
+    encode_input_for_decoder()
 
 
 # Evaluates decoder against the data in test_data (could be dev data or test data). Prints some output

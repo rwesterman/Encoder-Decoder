@@ -92,3 +92,25 @@ class RNNEncoder(nn.Module):
             h, c = hn[0][0], hn[1][0]
             h_t = (h, c)
         return (output, context_mask, h_t)
+
+class RNNDecoder(nn.Module):
+    def __init__(self, input_size, hidden_size, out_size, dropout = 0.2, batch_first = False):
+        super().__init__()
+        # self.input_size = input_size
+        # self.hidden_size = hidden_size
+        self.dropout = nn.Dropout(dropout)
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers=1, batch_first=batch_first,)
+        self.W = nn.Linear(hidden_size, out_size)
+        self.logsoft = nn.LogSoftmax()
+
+    def forward(self, emb, hid_in):
+        # emb should be [seq len x batch size x embedding size] (Default [1 x 1 x 100]
+
+        # Implementing dropout layer on input
+        inp = self.dropout(emb)
+
+        # hid_out is tuple with (h, c)
+        output, hid_out = self.lstm(inp, hid_in)
+
+        # return a softmax over the output, and the hidden layer to pass in to the next decoder cell
+        return self.logsoft(self.W(output)), hid_out
