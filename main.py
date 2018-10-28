@@ -230,7 +230,9 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
             enc_optim.step()
             dec_optim.step()
 
+        print("Total loss is {}".format(total_loss))
     parser = Seq2SeqSemanticParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
+    return parser
 
 def decode_forward(train_data, all_models, pair_idx, criterion,  args):
     loss = 0.0
