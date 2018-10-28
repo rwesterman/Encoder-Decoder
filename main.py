@@ -43,6 +43,9 @@ def _parse_args():
     parser.add_argument('--emb_dropout', type=float, default=0.2, help='input dropout rate')
     parser.add_argument('--rnn_dropout', type=float, default=0.2, help='dropout rate internal to encoder RNN')
     parser.add_argument('--dec_dropout', type=float, default=0.2, help='dropout for input to decoder')
+
+    # Additional arguments:
+    parser.add_argument('--debug', dest='debug', default=False, action="store_true", help="Set into debug mode and use less training data")
     args = parser.parse_args()
     return args
 
@@ -110,15 +113,16 @@ class Seq2SeqSemanticParser(object):
 
             for out_idx in range(self.max_out_len):
                 prediction, pred_val, dec_hidden = self.dec_and_predict(dec_input, dec_hidden)
-                dec_input = prediction
+                dec_input = torch.as_tensor(prediction).unsqueeze(0).unsqueeze(0)
                 if prediction != EOS_POS:
                     # Append the predicted TOKEN
-                    predictions.append(prediction)
+                    predictions.append(self.output_indexer.get_object(prediction))
                     pred_values.append(pred_val)
                 else:
                     # if the decode predicts EOS, then break the loop on this sentence
                     break
-            test_derivs.append(Derivation(test_data[pair_idx], pred_values, predictions))
+            # print(predictions)
+            test_derivs.append([Derivation(test_data[pair_idx], pred_values, predictions)])
 
         return test_derivs
 
@@ -127,7 +131,7 @@ class Seq2SeqSemanticParser(object):
         # decode_ouput embeds dec_input, then passes it and dec_hidden to the decoder model
         # hid_out is tuple, each element is 3D tensor w/ size [1 x 1 x hidden_size]
         # dec_out is 3D tensor w/ size [1, 1, output vocab size = 153]
-        dec_out, dec_hidden = decode_output(dec_input, dec_hidden, model_dec, model_output_emb)
+        dec_out, dec_hidden = decode_output(dec_input, dec_hidden, self.model_dec, self.model_output_emb)
         # Determine predicted index and its value
         pred_val, pred_idx = dec_out.topk(1)
 
@@ -336,6 +340,10 @@ if __name__ == '__main__':
 
     train, dev, test = load_datasets(args.train_path, args.dev_path, args.test_path, domain=args.domain)
     train_data_indexed, dev_data_indexed, test_data_indexed, input_indexer, output_indexer = index_datasets(train, dev, test, args.decoder_len_limit)
+
+    if args.debug:
+        train_data_indexed = train_data_indexed[:20]
+
     print("%i train exs, %i dev exs, %i input types, %i output types" % (len(train_data_indexed), len(dev_data_indexed), len(input_indexer), len(output_indexer)))
     print("Input indexer: %s" % input_indexer)
     print("Output indexer: %s" % output_indexer)
