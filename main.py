@@ -9,6 +9,11 @@ from models import *
 from data import *
 from utils import *
 
+PAD_POS = 0
+SOS_POS = 1
+UNK_POS = 1
+EOS_POS = 2
+
 def _parse_args():
     parser = argparse.ArgumentParser(description='main.py')
     
@@ -23,7 +28,7 @@ def _parse_args():
     
     # Some common arguments for your convenience
     parser.add_argument('--seed', type=int, default=0, help='RNG seed (default = 0)')
-    parser.add_argument('--epochs', type=int, default=100, help='num epochs to train for')
+    parser.add_argument('--epochs', type=int, default=20, help='num epochs to train for')
     parser.add_argument('--lr', type=float, default=.001)
     parser.add_argument('--batch_size', type=int, default=2, help='batch size')
     # 65 is all you need for GeoQuery
@@ -73,13 +78,60 @@ class NearestNeighborSemanticParser(object):
 
 
 class Seq2SeqSemanticParser(object):
-    def __init__(self):
-        raise Exception("implement me!")
-        # Add any args you need here
+    def __init__(self, model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args):
+        self.model_dec = model_dec
+        self.model_enc = model_enc
+        self.model_input_emb = model_input_emb
+        self.model_output_emb = model_output_emb
+        self.max_out_len = args.decoder_len_limit
+        self.output_indexer = output_indexer
 
     def decode(self, test_data):
-        raise Exception("implement me!")
+        test_derivs = []    # Will hold final Derivation objects from decoder
+        test_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
+        # Iterate through all of the test data
+        for pair_idx in range(len(test_data)):
+            predictions, pred_values = [], []   # These will hold the predictions from a sentence, and their values
 
+            # Get the input sequence for a single pair, then get it's length
+            in_seq, = torch.as_tensor(test_data[pair_idx].x_indexed).unsqueeze(0).unsqueeze(0)
+            # in_len is 1D size [sentence length] tensor
+            in_len = torch.as_tensor(len(test_data[pair_idx].x_indexed)).view(1)
+            # Get the output sequence for a pair
+            # out_seq = torch.as_tensor(test_data[pair_idx].y_indexed).view(-1)
+
+            (enc_output_each_word, enc_context_mask, enc_final_states_reshaped) = encode_input_for_decoder(
+                in_seq, in_len, self.model_input_emb, self.model_enc)
+
+            # Set up first inputs to decoder
+            dec_input = torch.as_tensor(SOS_POS).unsqueeze(0).unsqueeze(0)
+            #
+            dec_hidden = enc_final_states_reshaped
+
+            for out_idx in range(self.max_out_len):
+                prediction, pred_val, dec_hidden = self.dec_and_predict(dec_input, dec_hidden)
+                dec_input = prediction
+                if prediction != EOS_POS:
+                    # Append the predicted TOKEN
+                    predictions.append(prediction)
+                    pred_values.append(pred_val)
+                else:
+                    # if the decode predicts EOS, then break the loop on this sentence
+                    break
+            test_derivs.append(Derivation(test_data[pair_idx], pred_values, predictions))
+
+        return test_derivs
+
+
+    def dec_and_predict(self, dec_input, dec_hidden):
+        # decode_ouput embeds dec_input, then passes it and dec_hidden to the decoder model
+        # hid_out is tuple, each element is 3D tensor w/ size [1 x 1 x hidden_size]
+        # dec_out is 3D tensor w/ size [1, 1, output vocab size = 153]
+        dec_out, dec_hidden = decode_output(dec_input, dec_hidden, model_dec, model_output_emb)
+        # Determine predicted index and its value
+        pred_val, pred_idx = dec_out.topk(1)
+
+        return int(pred_idx), pred_val, dec_hidden
 
 # Takes the given Examples and their input indexer and turns them into a numpy array by padding them out to max_len.
 # Optionally reverses them.
@@ -116,9 +168,16 @@ def make_padded_output_tensor(exs, output_indexer, max_len):
 # enc_output_each_word = 3 x 4 x dim, enc_context_mask = [[1, 1, 0, 0], [1, 1, 1, 0], [1, 0, 0, 0]],
 # enc_final_states = 3 x dim
 def encode_input_for_decoder(x_tensor, inp_lens_tensor, model_input_emb, model_enc):
+    # Assuming I am not going to implement batching:
+    # x_tensor is size [1 x sentence length], inp_lens_tensor is size [sentence_length]
+    # input_emb is 3D Tensor w/ size [1 x sentence length x embedding size]
     input_emb = model_input_emb.forward(x_tensor)
+    # enc_output_each_word is 3D tensor w/ size [Sentence Length x Batch Size x 2 * hidden_size (400)]
+    # enc_final_states_reshaped is
     (enc_output_each_word, enc_context_mask, enc_final_states) = model_enc.forward(input_emb, inp_lens_tensor)
+    # enc_final_states_reshaped is tuple w/ two 3D tensors of size [1 x 1 x hidden_size]
     enc_final_states_reshaped = (enc_final_states[0].unsqueeze(0), enc_final_states[1].unsqueeze(0))
+
     return (enc_output_each_word, enc_context_mask, enc_final_states_reshaped)
 
 
@@ -127,7 +186,6 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
     train_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
     test_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
 
-    output_max_len = args.decoder_len_limit
 
     # Create model
     model_input_emb = EmbeddingLayer(args.input_dim, len(input_indexer), args.emb_dropout)
@@ -144,12 +202,15 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
     enc_optim = torch.optim.Adam(model_enc.parameters(), 1e-3)
     dec_optim = torch.optim.Adam(model_dec.parameters(), 1e-3)
 
+    criterion = torch.nn.NLLLoss()
+
     # Iterate through epochs
     for epoch in range(1, args.epochs + 1):
+        print("Epoch ", epoch)
+        total_loss = 0.0
         # Loop over all examples in training data
         for pair_idx in range(len(train_data)):
             # extract data from train_data
-            print("In: {}, out: {}".format(train_data[pair_idx].x_indexed, train_data[pair_idx].y_indexed))
             # Zero gradients
             inp_emb_optim.zero_grad()
             out_emb_optim.zero_grad()
@@ -157,21 +218,66 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
             dec_optim.zero_grad()
 
             # Forward Pass
-            loss = decode_forward(train_data, all_models, pair_idx, )
+            loss = decode_forward(train_data, all_models, pair_idx, criterion, args)
+            total_loss += loss
 
             # Backpropogation
+            loss.backward()
 
             # Optimizer step
+            inp_emb_optim.step()
+            out_emb_optim.step()
+            enc_optim.step()
+            dec_optim.step()
 
+    parser = Seq2SeqSemanticParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
 
-
-    # Loop over epochs, loop over examples, given some indexed words, call encode_input_for_decoder, then call your
-    # decoder, accumulate losses, update parameters
-    raise Exception("Implement the rest of me to train your parser")
-
-def decode_forward(train_data, all_models, pair_idx):
+def decode_forward(train_data, all_models, pair_idx, criterion,  args):
+    loss = 0.0
     (model_input_emb, model_output_emb, model_enc, model_dec) = all_models
-    encode_input_for_decoder()
+    # in_seq is 2D size [batch size x sentence length] tensor
+    in_seq, = torch.as_tensor(train_data[pair_idx].x_indexed).unsqueeze(0).unsqueeze(0)
+    # in_len is 1D size [sentence length] tensor
+    in_len = torch.as_tensor(len(train_data[pair_idx].x_indexed)).view(1)
+    out_seq = torch.as_tensor(train_data[pair_idx].y_indexed).view(-1)
+    # Run encoder with embedding here:
+    (enc_output_each_word, enc_context_mask, enc_final_states_reshaped) = encode_input_for_decoder(
+                                                                            in_seq, in_len, model_input_emb, model_enc)
+
+    # Set up first inputs to decoder
+    dec_input = torch.as_tensor(SOS_POS).unsqueeze(0).unsqueeze(0)
+    #
+    dec_hidden = enc_final_states_reshaped
+
+    # Step through each word in the output sequence, feeding into the decoder
+    for out_idx in range(len(out_seq)):
+        # decode_ouput embeds dec_input, then passes it and dec_hidden to the decoder model
+        # hid_out is tuple, each element is 3D tensor w/ size [1 x 1 x hidden_size]
+        # dec_out is 3D tensor w/ size [1, 1, output vocab size = 153]
+        dec_out, dec_hidden = decode_output(dec_input, dec_hidden, model_dec, model_output_emb)
+        # Determine predicted index and its value
+        pred_val, pred_idx = dec_out.topk(1)
+
+        # calculate loss from decoder output and expected value
+        loss += criterion(dec_out.squeeze(0), out_seq[out_idx].unsqueeze(0))
+
+        # Use teacher forcing to input correct word at next decoder step
+        dec_input = out_seq[out_idx].unsqueeze(0).unsqueeze(0)
+        # if int(pred_idx) == int(out_seq[out_idx].squeeze()):
+        #     print("Correct guess")
+        if int(pred_idx) == EOS_POS:
+            # print("Breaking for EOS")
+            break
+
+    return loss
+
+def decode_output(dec_input, dec_hidden, model_dec, model_output_emb):
+    # Returns input vector with 3rd dimension of size 100, so if input is [1 x 1], output is [1 x 1 x 100]
+    embedded = model_output_emb(dec_input)
+    # return logsoftmax over decoder output, and hidden state tuple, both 3D Tensors
+    dec_out, hid_out = model_dec(embedded, dec_hidden)
+
+    return dec_out, hid_out
 
 
 # Evaluates decoder against the data in test_data (could be dev data or test data). Prints some output

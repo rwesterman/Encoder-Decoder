@@ -15,6 +15,7 @@ class EmbeddingLayer(nn.Module):
     def __init__(self, input_dim, full_dict_size, embedding_dropout_rate):
         super(EmbeddingLayer, self).__init__()
         self.dropout = nn.Dropout(embedding_dropout_rate)
+        # nn.Embedding(num_embeddings = size of dictionary of embeddings, embedding_dim = size of each embedding vector)
         self.word_embedding = nn.Embedding(full_dict_size, input_dim)
 
     # Takes either a non-batched input [sent len x input_dim] or a batched input
@@ -23,7 +24,6 @@ class EmbeddingLayer(nn.Module):
         embedded_words = self.word_embedding(input)
         final_embeddings = self.dropout(embedded_words)
         return final_embeddings
-
 
 # One-layer RNN encoder for batched inputs -- handles multiple sentences at once. You're free to call it with a
 # leading dimension of 1 (batch size 1) but it does expect this dimension.
@@ -101,7 +101,7 @@ class RNNDecoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers=1, batch_first=batch_first,)
         self.W = nn.Linear(hidden_size, out_size)
-        self.logsoft = nn.LogSoftmax()
+        self.logsoft = nn.LogSoftmax(dim=2)
 
     def forward(self, emb, hid_in):
         # emb should be [seq len x batch size x embedding size] (Default [1 x 1 x 100]
