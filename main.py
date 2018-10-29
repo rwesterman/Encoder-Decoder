@@ -17,6 +17,8 @@ EOS_POS = 2
 exact = 0.0
 total_sentences = 0.0
 
+# Todo: Look into ModuleList to make sure backpropogation is being performed over all the models (ModelList?)
+
 def _parse_args():
     parser = argparse.ArgumentParser(description='main.py')
     
@@ -31,7 +33,7 @@ def _parse_args():
     
     # Some common arguments for your convenience
     parser.add_argument('--seed', type=int, default=0, help='RNG seed (default = 0)')
-    parser.add_argument('--epochs', type=int, default=20, help='num epochs to train for')
+    parser.add_argument('--epochs', type=int, default=5, help='num epochs to train for')
     parser.add_argument('--lr', type=float, default=.001)
     parser.add_argument('--batch_size', type=int, default=2, help='batch size')
     # 65 is all you need for GeoQuery
@@ -392,6 +394,7 @@ if __name__ == '__main__':
     else:
         decoder = train_model_encdec(train_data_indexed, dev_data_indexed, input_indexer, output_indexer, args)
     print("=======FINAL EVALUATION ON BLIND TEST=======")
-    evaluate(test_data_indexed, decoder, print_output=True, outfile="geo_test_output.tsv")
+    # evaluate(test_data_indexed, decoder, print_output=True, outfile="geo_test_output.tsv")
+    evaluate(dev_data_indexed, decoder, print_output=True, outfile="geo_test_output.tsv")
 
 
