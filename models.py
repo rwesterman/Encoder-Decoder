@@ -101,8 +101,8 @@ class RNNDecoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers=1, batch_first=batch_first,)
         self.W = nn.Linear(hidden_size, out_size)
-        self.logsoft = nn.LogSoftmax(dim=2)
-        # self.logsoft = nn.LogSoftmax(dim=1)
+        # self.logsoft = nn.LogSoftmax(dim=2)
+        self.logsoft = nn.LogSoftmax(dim=1)
 
     def forward(self, emb, hid_in):
         # emb should be [seq len x batch size x embedding size] (Default [1 x 1 x 100]
@@ -112,6 +112,8 @@ class RNNDecoder(nn.Module):
 
         # hid_out is tuple with (h, c)
         output, hid_out = self.lstm(inp, hid_in)
+        (hn, cn) = hid_out
+        # print("hid_out size ", hid_out.size())
 
         # return a softmax over the output, and the hidden layer to pass in to the next decoder cell
-        return self.logsoft(self.W(output)), hid_out
+        return self.logsoft(self.W(hn[0])), hid_out

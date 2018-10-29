@@ -288,7 +288,7 @@ def decode_forward(train_data, all_models, pair_idx, criterion,  args):
         pred_val, pred_idx = dec_out.topk(1)
 
         # calculate loss from decoder output and expected value
-        loss += criterion(dec_out.squeeze(0), out_seq[out_idx].unsqueeze(0))
+        loss += criterion(dec_out, out_seq[out_idx].unsqueeze(0))
 
         # Use teacher forcing to input correct word at next decoder step
         dec_input = out_seq[out_idx].unsqueeze(0).unsqueeze(0)
@@ -314,7 +314,6 @@ def decode_output(dec_input, dec_hidden, model_dec, model_output_emb):
     dec_out, hid_out = model_dec(embedded, dec_hidden)
 
     return dec_out, hid_out
-
 
 # Evaluates decoder against the data in test_data (could be dev data or test data). Prints some output
 # every example_freq examples. Writes predictions to outfile if defined. Evaluation requires
