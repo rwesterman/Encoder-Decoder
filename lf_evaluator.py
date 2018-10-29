@@ -127,7 +127,26 @@ class GeoqueryDomain(object):
         # exit()
         #####
         try:
-            msg = subprocess.check_output(['evaluator/geoquery', tf.name]).decode("utf-8")
+            # msg = subprocess.check_output(['evaluator/geoquery', tf.name]).decode("utf-8")
+            msg = subprocess.check_output(['java', '-ea', '-server', '-Xss8m', '-cp',
+                                           'evaluator/evaluator.jar:lib/scala-compiler.jar:lib/scala-library.jar:lib/fig.jar:lib/tea.jar:lib/berkeleyParser.jar:lib/trove-2.1.0.jar',
+                                           'dcs.NuggetLearn', '-create', '-monitor', '-useStandardExecPoolDirStrategy',
+                                           '-jarFiles', 'evaluator/evaluator.jar',
+                                           '+miscOptions', 'new4', '-model.verbose', '2', '-numIters', '5',
+                                           '-updateType', 'full', '-miniBatchSize', 'MAX',
+                                           '-parser.command', '"bash lib/lowercase-parser"', '-parser.lowercase',
+                                           'true', '-useBayesianAveraging', 'true',
+                                           '-allowTroll', '-regularization', '0.01', '-beamSize', '100', '-features',
+                                           'pred', 'pred2', 'predarg', 'lexpred',
+                                           'lexnull', '-generalMaxExamples', 'MAX', '-data.permuteExamples', 'true',
+                                           '-displayTypes', 'false', '-displayDens',
+                                           'false', '-displaySpans', 'false', '-displayMaxSetSize', '1', '-msPerLine',
+                                           '0', '-int.verbose', '0', '-data.verbose',
+                                           '0', '-addToView', 'geo3', '-lexToName', '-lexToSetWithName',
+                                           '-generalPaths', 'evaluator/domains/dbquery/geoquery/1/geoquery.dlog',
+                                           'evaluator/domains/dbquery/geoquery/1/lexicon.dlog', '-dlogOptions',
+                                           'lexMode=0', '+generalPaths', tf.name, '-trainFrac', '0.7',
+                                           '-testFrac', '0.3', '-data.random', '1'], stderr=subprocess.STDOUT).decode("utf-8")
             # Use this line instead if the subprocess call is crashing
             # msg = ""
         except subprocess.CalledProcessError as err:

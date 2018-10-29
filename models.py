@@ -94,7 +94,7 @@ class RNNEncoder(nn.Module):
         return (output, context_mask, h_t)
 
 class RNNDecoder(nn.Module):
-    def __init__(self, input_size, hidden_size, out_size, dropout = 0.2, batch_first = False):
+    def __init__(self, input_size, hidden_size, out_size, dropout = 0.2, batch_first = True):
         super().__init__()
         # self.input_size = input_size
         # self.hidden_size = hidden_size

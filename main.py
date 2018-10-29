@@ -46,6 +46,7 @@ def _parse_args():
 
     # Additional arguments:
     parser.add_argument('--debug', dest='debug', default=False, action="store_true", help="Set into debug mode and use less training data")
+    parser.add_argument('--copy', dest='copy', default=False, action="store_true", help="Test that the decoder model can copy")
     args = parser.parse_args()
     return args
 
@@ -90,6 +91,11 @@ class Seq2SeqSemanticParser(object):
         self.output_indexer = output_indexer
 
     def decode(self, test_data):
+        self.model_dec.eval()
+        self.model_enc.eval()
+        self.model_input_emb.eval()
+        self.model_output_emb.eval()
+
         test_derivs = []    # Will hold final Derivation objects from decoder
         test_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
         # Iterate through all of the test data
@@ -245,7 +251,12 @@ def decode_forward(train_data, all_models, pair_idx, criterion,  args):
     in_seq, = torch.as_tensor(train_data[pair_idx].x_indexed).unsqueeze(0).unsqueeze(0)
     # in_len is 1D size [sentence length] tensor
     in_len = torch.as_tensor(len(train_data[pair_idx].x_indexed)).view(1)
-    out_seq = torch.as_tensor(train_data[pair_idx].y_indexed).view(-1)
+
+    if args.copy:
+        out_seq = torch.as_tensor(train_data[pair_idx].x_indexed).view(-1)
+        gold, pred = [], []
+    else:
+        out_seq = torch.as_tensor(train_data[pair_idx].y_indexed).view(-1)
     # Run encoder with embedding here:
     (enc_output_each_word, enc_context_mask, enc_final_states_reshaped) = encode_input_for_decoder(
                                                                             in_seq, in_len, model_input_emb, model_enc)
@@ -271,9 +282,17 @@ def decode_forward(train_data, all_models, pair_idx, criterion,  args):
         dec_input = out_seq[out_idx].unsqueeze(0).unsqueeze(0)
         # if int(pred_idx) == int(out_seq[out_idx].squeeze()):
         #     print("Correct guess")
-        if int(pred_idx) == EOS_POS:
+        if args.copy:
+            gold.append(int(out_seq[out_idx]))
+            pred.append(int(pred_idx))
+
+        if int(pred_idx) == EOS_POS and not args.copy:
             # print("Breaking for EOS")
             break
+
+    if args.copy:
+        if gold == pred:
+            print("Gold: {}\nPred: {}".format(gold, pred))
 
     return loss
 
@@ -353,9 +372,11 @@ if __name__ == '__main__':
     if args.do_nearest_neighbor:
         decoder = NearestNeighborSemanticParser(train_data_indexed)
         evaluate(dev_data_indexed, decoder)
+    elif args.copy:
+        decoder = train_model_encdec(train_data_indexed, dev_data_indexed, input_indexer, input_indexer, args)
     else:
         decoder = train_model_encdec(train_data_indexed, dev_data_indexed, input_indexer, output_indexer, args)
     print("=======FINAL EVALUATION ON BLIND TEST=======")
-    evaluate(test_data_indexed, decoder, print_output=False, outfile="geo_test_output.tsv")
+    evaluate(test_data_indexed, decoder, print_output=True, outfile="geo_test_output.tsv")
 
 
