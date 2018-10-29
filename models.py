@@ -102,6 +102,7 @@ class RNNDecoder(nn.Module):
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers=1, batch_first=batch_first,)
         self.W = nn.Linear(hidden_size, out_size)
         self.logsoft = nn.LogSoftmax(dim=2)
+        # self.logsoft = nn.LogSoftmax(dim=1)
 
     def forward(self, emb, hid_in):
         # emb should be [seq len x batch size x embedding size] (Default [1 x 1 x 100]

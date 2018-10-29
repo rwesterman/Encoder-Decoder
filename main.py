@@ -14,6 +14,9 @@ SOS_POS = 1
 UNK_POS = 1
 EOS_POS = 2
 
+exact = 0.0
+total_sentences = 0.0
+
 def _parse_args():
     parser = argparse.ArgumentParser(description='main.py')
     
@@ -103,7 +106,7 @@ class Seq2SeqSemanticParser(object):
             predictions, pred_values = [], []   # These will hold the predictions from a sentence, and their values
 
             # Get the input sequence for a single pair, then get it's length
-            in_seq, = torch.as_tensor(test_data[pair_idx].x_indexed).unsqueeze(0).unsqueeze(0)
+            in_seq = torch.as_tensor(test_data[pair_idx].x_indexed).unsqueeze(0)
             # in_len is 1D size [sentence length] tensor
             in_len = torch.as_tensor(len(test_data[pair_idx].x_indexed)).view(1)
             # Get the output sequence for a pair
@@ -216,6 +219,10 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
 
     # Iterate through epochs
     for epoch in range(1, args.epochs + 1):
+        global total_sentences
+        global exact
+        total_sentences = 0.0
+        exact = 0.0
         print("Epoch ", epoch)
         total_loss = 0.0
         # Loop over all examples in training data
@@ -241,14 +248,18 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
             dec_optim.step()
 
         print("Total loss is {}".format(total_loss))
+        if args.copy:
+            print("{}% correct on copy task".format(100*float(exact/total_sentences)))
     parser = Seq2SeqSemanticParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
     return parser
 
 def decode_forward(train_data, all_models, pair_idx, criterion,  args):
+    global exact
+    global total_sentences
     loss = 0.0
     (model_input_emb, model_output_emb, model_enc, model_dec) = all_models
     # in_seq is 2D size [batch size x sentence length] tensor
-    in_seq, = torch.as_tensor(train_data[pair_idx].x_indexed).unsqueeze(0).unsqueeze(0)
+    in_seq = torch.as_tensor(train_data[pair_idx].x_indexed).unsqueeze(0)
     # in_len is 1D size [sentence length] tensor
     in_len = torch.as_tensor(len(train_data[pair_idx].x_indexed)).view(1)
 
@@ -272,6 +283,7 @@ def decode_forward(train_data, all_models, pair_idx, criterion,  args):
         # hid_out is tuple, each element is 3D tensor w/ size [1 x 1 x hidden_size]
         # dec_out is 3D tensor w/ size [1, 1, output vocab size = 153]
         dec_out, dec_hidden = decode_output(dec_input, dec_hidden, model_dec, model_output_emb)
+        # print(dec_out)
         # Determine predicted index and its value
         pred_val, pred_idx = dec_out.topk(1)
 
@@ -280,19 +292,18 @@ def decode_forward(train_data, all_models, pair_idx, criterion,  args):
 
         # Use teacher forcing to input correct word at next decoder step
         dec_input = out_seq[out_idx].unsqueeze(0).unsqueeze(0)
-        # if int(pred_idx) == int(out_seq[out_idx].squeeze()):
-        #     print("Correct guess")
         if args.copy:
             gold.append(int(out_seq[out_idx]))
             pred.append(int(pred_idx))
 
         if int(pred_idx) == EOS_POS and not args.copy:
-            # print("Breaking for EOS")
             break
 
     if args.copy:
+        total_sentences += 1
         if gold == pred:
             print("Gold: {}\nPred: {}".format(gold, pred))
+            exact += 1
 
     return loss
 
