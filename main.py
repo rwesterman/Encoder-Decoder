@@ -250,6 +250,11 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
         print("Total loss is {}".format(total_loss))
         if args.copy:
             print("{}% correct on copy task".format(100*float(exact/total_sentences)))
+
+    if args.copy:
+        print("Done with copy task, exiting before evaluation")
+        exit()
+
     parser = Seq2SeqSemanticParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
     return parser
 
