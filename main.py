@@ -52,6 +52,7 @@ def _parse_args():
     # Additional arguments:
     parser.add_argument('--debug', dest='debug', default=False, action="store_true", help="Set into debug mode and use less training data")
     parser.add_argument('--copy', dest='copy', default=False, action="store_true", help="Test that the decoder model can copy")
+    parser.add_argument('--eval_file', type=str, default="eval_results.txt", help="Filepath to store evaluation results")
     args = parser.parse_args()
     return args
 
@@ -196,10 +197,10 @@ def encode_input_for_decoder(x_tensor, inp_lens_tensor, model_input_emb, model_e
     return (enc_output_each_word, enc_context_mask, enc_final_states_reshaped)
 
 
-def train_model_encdec(train_data, test_data, input_indexer, output_indexer, args):
+def train_model_encdec(train_data, dev_data, input_indexer, output_indexer, args):
     # Sort in descending order by x_indexed, essential for pack_padded_sequence
     train_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
-    test_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
+    dev_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
 
 
     # Create model
@@ -226,6 +227,9 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
         total_sentences = 0.0
         exact = 0.0
         print("Epoch ", epoch)
+        with open(args.eval_file, "a") as f:
+            f.write("Epoch {}\n".format(epoch))
+
         total_loss = 0.0
         # Loop over all examples in training data
         for pair_idx in range(len(train_data)):
@@ -249,7 +253,14 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
             enc_optim.step()
             dec_optim.step()
 
+        with open(args.eval_file, "a") as f:
+            f.write("Total loss is {}\n".format(total_loss))
+
         print("Total loss is {}".format(total_loss))
+
+        parser = Seq2SeqSemanticParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
+        evaluate(dev_data, parser, print_output=True, outfile="geo_test_output.tsv")
+
         if args.copy:
             print("{}% correct on copy task".format(100*float(exact/total_sentences)))
 
@@ -257,7 +268,6 @@ def train_model_encdec(train_data, test_data, input_indexer, output_indexer, arg
         print("Done with copy task, exiting before evaluation")
         exit()
 
-    parser = Seq2SeqSemanticParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
     return parser
 
 def decode_forward(train_data, all_models, pair_idx, criterion,  args):
@@ -352,6 +362,11 @@ def evaluate(test_data, decoder, example_freq=50, print_output=True, outfile=Non
         if denotation_correct[i]:
             num_denotation_match += 1
     if print_output:
+        with open(args.eval_file, "a") as f:
+            f.write("Exact logical form matches: %s\n" % (render_ratio(num_exact_match, len(test_data))))
+            f.write("Token-level accuracy: %s\n" % (render_ratio(num_tokens_correct, total_tokens)))
+            f.write("Denotation matches: %s\n" % (render_ratio(num_denotation_match, len(test_data))))
+
         print("Exact logical form matches: %s" % (render_ratio(num_exact_match, len(test_data))))
         print("Token-level accuracy: %s" % (render_ratio(num_tokens_correct, total_tokens)))
         print("Denotation matches: %s" % (render_ratio(num_denotation_match, len(test_data))))
@@ -384,6 +399,8 @@ if __name__ == '__main__':
     print("Input indexer: %s" % input_indexer)
     print("Output indexer: %s" % output_indexer)
     print("Here are some examples post tokenization and indexing:")
+
+    # print("\n\nSOS position is {}".format(output_indexer.get_index(SOS_SYMBOL)))
     for i in range(0, min(len(train_data_indexed), 10)):
         print(train_data_indexed[i])
     if args.do_nearest_neighbor:
