@@ -1,6 +1,8 @@
 import random
 import numpy as np
 
+# Todo: Incorporate opening geo_train.tsv, appending, and saving as new training file
+
 class SubbedSentence():
     def __init__(self, x_indexed, y_indexed, x_tok, y_tok):
         self.x_indexed = x_indexed
