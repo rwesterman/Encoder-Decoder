@@ -3,6 +3,9 @@ import numpy as np
 
 # Todo: Incorporate opening geo_train.tsv, appending, and saving as new training file
 
+# Todo: Output sequences are all surrounded by quotes " ". Why???
+
+
 class SubbedSentence():
     def __init__(self, x_indexed, y_indexed, x_tok, y_tok):
         self.x_indexed = x_indexed
@@ -210,5 +213,7 @@ def print_subs_to_file(sub_sent_list, filename):
             print(" ".join(sub.x_tok))
             f.write(" ".join(sub.x_tok))
             f.write("\t")
-            f.write(" ".join(sub.y_tok))
+            outseq = " ".join(sub.y_tok)
+            outseq = outseq.strip("\"")
+            f.write(outseq)
             f.write("\n")

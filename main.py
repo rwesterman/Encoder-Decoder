@@ -52,6 +52,7 @@ def _parse_args():
 
     # Additional arguments:
     parser.add_argument('--debug', dest='debug', default=False, action="store_true", help="Set into debug mode and use less training data")
+    parser.add_argument('--recomb', dest='recomb', default=False, action="store_true", help="Run recombination instead of training")
     parser.add_argument('--copy', dest='copy', default=False, action="store_true", help="Test that the decoder model can copy")
     parser.add_argument('--eval_file', type=str, default="eval_results.txt", help="Filepath to store evaluation results")
     args = parser.parse_args()
@@ -214,10 +215,10 @@ def train_model_encdec(train_data, dev_data, input_indexer, output_indexer, args
     # pack all models to pass to decode_forward function
     all_models = (model_input_emb, model_output_emb, model_enc, model_dec)
     # Create optimizers for every model
-    inp_emb_optim = torch.optim.Adam(model_input_emb.parameters(), 1e-3)
-    out_emb_optim = torch.optim.Adam(model_output_emb.parameters(), 1e-3)
-    enc_optim = torch.optim.Adam(model_enc.parameters(), 1e-3)
-    dec_optim = torch.optim.Adam(model_dec.parameters(), 1e-3)
+    inp_emb_optim = torch.optim.Adam(model_input_emb.parameters(), args.lr)
+    out_emb_optim = torch.optim.Adam(model_output_emb.parameters(), args.lr)
+    enc_optim = torch.optim.Adam(model_enc.parameters(), args.lr)
+    dec_optim = torch.optim.Adam(model_dec.parameters(), args.lr)
 
     criterion = torch.nn.NLLLoss()
 
@@ -382,9 +383,8 @@ def evaluate(test_data, decoder, example_freq=50, print_output=True, outfile=Non
 def render_ratio(numer, denom):
     return "%i / %i = %.3f" % (numer, denom, float(numer)/denom)
 
-
-if __name__ == '__main__':
-    args = _parse_args()
+def main(args):
+    # args = _parse_args()
     print(args)
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -418,5 +418,34 @@ if __name__ == '__main__':
     print("=======FINAL EVALUATION ON BLIND TEST=======")
     # evaluate(test_data_indexed, decoder, print_output=True, outfile="geo_test_output.tsv")
     evaluate(dev_data_indexed, decoder, print_output=True, outfile="geo_test_output.tsv")
+
+
+
+if __name__ == '__main__':
+    args = _parse_args()
+    if args.recomb:
+        print(args)
+        random.seed(args.seed)
+        np.random.seed(args.seed)
+        # Load the training and test data
+
+        train, dev, test = load_datasets(args.train_path, args.dev_path, args.test_path, domain=args.domain)
+        train_data_indexed, dev_data_indexed, test_data_indexed, input_indexer, output_indexer = index_datasets(train, dev,
+                                                                                                                test,
+                                                                                                                args.decoder_len_limit)
+
+        if args.debug:
+            train_data_indexed = train_data_indexed[:20]
+
+        print("%i train exs, %i dev exs, %i input types, %i output types" % (
+        len(train_data_indexed), len(dev_data_indexed), len(input_indexer), len(output_indexer)))
+        print("Input indexer: %s" % input_indexer)
+        print("Output indexer: %s" % output_indexer)
+        print("Here are some examples post tokenization and indexing:")
+
+        # get_states(input_indexer, output_indexer)
+        sub_equivs(train_data_indexed, input_indexer, output_indexer)
+    else:
+        main(args)
 
 
