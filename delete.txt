@@ -1,0 +1,8 @@
+Epoch 1
+Total loss is 2524.626220703125
+Epoch 1
+Total loss is 2561.7001953125
+Epoch 1
+Total loss is 2293.704345703125
+Epoch 1
+Total loss is 2514.235595703125

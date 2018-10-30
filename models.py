@@ -117,3 +117,60 @@ class RNNDecoder(nn.Module):
 
         # return a softmax over the output, and the hidden layer to pass in to the next decoder cell
         return self.logsoft(self.W(hn[0])), hid_out
+
+class AttnDecoder(nn.Module):
+    def __init__(self, inp_size, hid_size, out_size, dropout = 0.2):
+        super().__init__()
+        self.lstm = nn.LSTM(inp_size, hid_size,)
+        self.out = nn.Linear(hid_size, out_size)
+        self.dropout = nn.Dropout(dropout)
+        # in-between linear layer after output of lstm
+        self.attention = nn.Linear(hid_size, hid_size)
+        self.softmax = nn.Softmax(dim=1)
+        self.soft0 = nn.Softmax(dim=0)
+        self.logsoft = nn.LogSoftmax(dim=1)
+        self.tanh = nn.Tanh()
+        # to be used after concatenation, input to Wc is 2x hidden size, output is hidden size
+        self.Wc = nn.Linear(hid_size * 2, hid_size)
+        # used with softmax to get output. Not using softmax in this model because I'm using CrossEntropyLoss
+        self.Ws = nn.Linear(hid_size, out_size)
+        self.Wout = nn.Linear(hid_size * 2, out_size)
+
+    def forward(self, emb, hidden, enc_outs):
+        """
+
+        :param emb: embedded input of one word, should be three dimensional for LSTM. Comes in as Tensor[Sent_len, Batch_size, embedding_size]. Currently Tensor[19,1,200]
+        :param hidden: tuple containing (h0, c0) inputs to LSTM
+        :param enc_outs: Encoder outputs for each word in the sentence. Shape is (seq x batch x embedded)
+        :return:
+        """
+        # Try Graham Neubig's approach here. Feed concatenated hidden input and encoder outs to lstm
+        x = self.dropout(emb)
+
+        # call this output i as seen in class notes
+        # out_i, h_out, c_out size = Tensor[1,1,200].
+        out_i, (h_out, c_out) = self.lstm(x, hidden)
+
+        # removing "batch" dimension from encoder outputs so they can be multiplied below
+        enc_outs = enc_outs.squeeze(1)
+        # Copy h_out and make it 2D for matrix math below. Will return h_out from forward() because it is used
+        # as input to LSTM which expects 3D tensor
+        h_i = h_out.squeeze(1)
+
+        # Performing bilinear operation for f(), called "general" in Luong attention paper
+        # self.attention(h_i) is multiplying weight vector by h_i output from lstm
+        # Multiplying matrices as such:
+        e_ij = torch.matmul(h_i, self.attention(enc_outs).t())   # tensor.t() transposes 2d tensor
+        # e_ij = torch.mm(h_i, enc_outs.t())
+        attn_weights = self.softmax(e_ij)
+        c_ij = torch.mm(attn_weights, enc_outs)
+
+        # concatenate along dimension 1
+        # Note: Look at attention paper from graham
+        hc = torch.cat([h_i, c_ij], dim=1)
+        # ht_bar = self.tanh(self.Wc(hc))
+        # attn_out = self.logsoft(self.Ws(ht_bar))
+        attn_out = self.logsoft(self.Wout(hc))
+        # print("attnout size: ", attn_out.size())
+
+        return attn_out, (h_out, c_out)

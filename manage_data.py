@@ -87,7 +87,6 @@ def index_data(data, input_indexer, output_indexer, example_len_limit):
                                           index(y_tok, output_indexer) + [output_indexer.get_index(EOS_SYMBOL)]))
     return data_indexed
 
-
 # Indexes train and test datasets where all words occurring less than or equal to unk_threshold times are
 # replaced by UNK tokens.
 def index_datasets(train_data, dev_data, test_data, example_len_limit, unk_threshold=0.0):
