@@ -8,6 +8,7 @@ from lf_evaluator import *
 from models import *
 from data import *
 from utils import *
+from substitute_equiv import *
 
 PAD_POS = 0
 SOS_POS = 1
@@ -400,6 +401,9 @@ if __name__ == '__main__':
     print("Output indexer: %s" % output_indexer)
     print("Here are some examples post tokenization and indexing:")
 
+    get_states(input_indexer, output_indexer)
+    sub_equivs(train_data_indexed, input_indexer, output_indexer)
+    exit()
     # print("\n\nSOS position is {}".format(output_indexer.get_index(SOS_SYMBOL)))
     for i in range(0, min(len(train_data_indexed), 10)):
         print(train_data_indexed[i])
