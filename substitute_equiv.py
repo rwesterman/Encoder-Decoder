@@ -1,4 +1,4 @@
-import random
+from shutil import copyfile
 import numpy as np
 
 # Todo: Incorporate opening geo_train.tsv, appending, and saving as new training file
@@ -151,11 +151,6 @@ def sub_equivs(train_data, input_indexer, output_indexer):
     # initialize these to zero so they can be
     new_sents = []
     for idx in range(len(train_data)):
-        if "west virginia" in train_data[idx].x_tok:
-            print(train_data[idx].y_tok)
-            print(train_data[idx].y_indexed)
-
-        st_in_tokens, st_out_tokens, st_in_idxs, st_out_idxs = 0, 0, 0, 0
         # This line checks whether
         if states.check_x_indexed_for_state(train_data[idx].x_indexed):
             # If the sentence contains a state, find out which state, and at what index
@@ -187,15 +182,9 @@ def sub_equivs(train_data, input_indexer, output_indexer):
                     new_y_toks = train_data[idx].y_tok.copy()
                     new_y_toks[tr_out_idx] = st_out_tokens[state_pos]
 
-                    # print(new_x_toks)
-                    # newsent = SubbedSentence(new_x_indexed, new_y_indexed, new_x_toks, new_y_toks)
-                    # print(newsent.x_tok)
                     new_sents.append(SubbedSentence(new_x_indexed, new_y_indexed, new_x_toks, new_y_toks))
-                    # new_sents.append((new_x_toks, new_y_toks))
-                    # new_sents.append(newsent)
 
-    # print(new_sents)
-    print_subs_to_file(new_sents, "Subbed_States.tsv")
+    print_subs_to_file(new_sents)
 
 
 
@@ -207,8 +196,10 @@ def find_matching_index(list1, list2):
             for index, element in enumerate(list2) if element in inverse_index]
 
 
-def print_subs_to_file(sub_sent_list, filename):
-    with open(filename, "w") as f:
+def print_subs_to_file(sub_sent_list):
+    filepath = "data/geo_train_plus.tsv"
+    copyfile("data/geo_train.tsv", filepath)
+    with open(filepath, "a") as f:
         for sub in sub_sent_list:
             print(" ".join(sub.x_tok))
             f.write(" ".join(sub.x_tok))
@@ -217,3 +208,4 @@ def print_subs_to_file(sub_sent_list, filename):
             outseq = outseq.strip("\"")
             f.write(outseq)
             f.write("\n")
+    print("Wrote new sequences to {}".format(filepath))
