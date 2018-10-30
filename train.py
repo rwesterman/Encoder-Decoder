@@ -105,7 +105,10 @@ def train_model_encdec(train_data, dev_data, input_indexer, output_indexer, args
 
         print("Total loss is {}".format(total_loss))
 
-        parser = parsers.Seq2SeqSemanticParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
+        if args.attn:
+            parser = parsers.AttnParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
+        else:
+            parser = parsers.Seq2SeqSemanticParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
         evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
 
         if args.copy:

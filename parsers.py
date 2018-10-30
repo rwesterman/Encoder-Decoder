@@ -1,7 +1,7 @@
 import torch
 
 from manage_data import Derivation
-from train import encode_input_for_decoder, SOS_POS, EOS_POS, decode_output
+from train import encode_input_for_decoder, SOS_POS, EOS_POS, decode_output, attn_output
 
 SOS_POS = 1
 EOS_POS = 2
@@ -96,3 +96,63 @@ class Seq2SeqSemanticParser(object):
 
         return int(pred_idx), pred_val, dec_hidden
 
+class AttnParser(object):
+    def __init__(self, model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args):
+        self.model_dec = model_dec
+        self.model_enc = model_enc
+        self.model_input_emb = model_input_emb
+        self.model_output_emb = model_output_emb
+        self.max_out_len = args.decoder_len_limit
+        self.output_indexer = output_indexer
+
+    def decode(self, test_data):
+        self.model_dec.eval()
+        self.model_enc.eval()
+        self.model_input_emb.eval()
+        self.model_output_emb.eval()
+
+        test_derivs = []    # Will hold final Derivation objects from decoder
+        test_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
+        # Iterate through all of the test data
+        for pair_idx in range(len(test_data)):
+            predictions, pred_values = [], []   # These will hold the predictions from a sentence, and their values
+
+            # Get the input sequence for a single pair, then get it's length
+            in_seq = torch.as_tensor(test_data[pair_idx].x_indexed).unsqueeze(0)
+            # in_len is 1D size [sentence length] tensor
+            in_len = torch.as_tensor(len(test_data[pair_idx].x_indexed)).view(1)
+            # Get the output sequence for a pair
+            # out_seq = torch.as_tensor(test_data[pair_idx].y_indexed).view(-1)
+
+            (enc_output_each_word, enc_context_mask, enc_final_states_reshaped) = encode_input_for_decoder(
+                in_seq, in_len, self.model_input_emb, self.model_enc)
+
+            # Set up first inputs to decoder
+            dec_input = torch.as_tensor(SOS_POS).unsqueeze(0).unsqueeze(0)
+            #
+            dec_hidden = enc_final_states_reshaped
+
+            for out_idx in range(self.max_out_len):
+                prediction, pred_val, dec_hidden = self.attn_predict(dec_input, dec_hidden, enc_output_each_word)
+                dec_input = torch.as_tensor(prediction).unsqueeze(0).unsqueeze(0)
+                if prediction != EOS_POS:
+                    # Append the predicted TOKEN
+                    predictions.append(self.output_indexer.get_object(prediction))
+                    pred_values.append(pred_val)
+                else:
+                    # if the decode predicts EOS, then break the loop on this sentence
+                    break
+            # print(predictions)
+            test_derivs.append([Derivation(test_data[pair_idx], pred_values, predictions)])
+
+        return test_derivs
+
+    def attn_predict(self, dec_input, dec_hidden, enc_outputs):
+        # decode_ouput embeds dec_input, then passes it and dec_hidden to the decoder model
+        # hid_out is tuple, each element is 3D tensor w/ size [1 x 1 x hidden_size]
+        # dec_out is 3D tensor w/ size [1, 1, output vocab size = 153]
+        dec_out, dec_hidden = attn_output(dec_input, dec_hidden, enc_outputs, self.model_dec, self.model_output_emb)
+        # Determine predicted index and its value
+        pred_val, pred_idx = dec_out.topk(1)
+
+        return int(pred_idx), pred_val, dec_hidden
