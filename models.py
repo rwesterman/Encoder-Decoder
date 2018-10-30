@@ -88,9 +88,11 @@ class RNNEncoder(nn.Module):
             new_h = self.reduce_h_W(h_)
             new_c = self.reduce_c_W(c_)
             h_t = (new_h, new_c)
+            # print("h_t is new_h, new_c. new_h size: {}, new_c size: {}".format(new_h.size(), new_c.size()))
         else:
             h, c = hn[0][0], hn[1][0]
             h_t = (h, c)
+
         return (output, context_mask, h_t)
 
 class RNNDecoder(nn.Module):
@@ -119,11 +121,13 @@ class RNNDecoder(nn.Module):
         return self.logsoft(self.W(hn[0])), hid_out
 
 class AttnDecoder(nn.Module):
-    def __init__(self, inp_size, hid_size, out_size, dropout = 0.2):
+    def __init__(self, inp_size, hid_size, out_size, args, dropout = 0.2):
         super().__init__()
+        self.args = args
         self.lstm = nn.LSTM(inp_size, hid_size,)
         self.out = nn.Linear(hid_size, out_size)
         self.dropout = nn.Dropout(dropout)
+        self.enc_reduce = nn.Linear(2*hid_size, hid_size)
         # in-between linear layer after output of lstm
         self.attention = nn.Linear(hid_size, hid_size)
         self.softmax = nn.Softmax(dim=1)
@@ -136,6 +140,7 @@ class AttnDecoder(nn.Module):
         self.Ws = nn.Linear(hid_size, out_size)
         self.Wout = nn.Linear(hid_size * 2, out_size)
 
+
     def forward(self, emb, hidden, enc_outs):
         """
 
@@ -144,6 +149,11 @@ class AttnDecoder(nn.Module):
         :param enc_outs: Encoder outputs for each word in the sentence. Shape is (seq x batch x embedded)
         :return:
         """
+        # If encoder is bidirectional, then its output will be
+        # [sent len x batch size x 2*hidden size], so we need to reduce 3rd dimension to hidden size
+        if self.args.bidirectional:
+            enc_outs = self.enc_reduce(enc_outs)
+
         # Try Graham Neubig's approach here. Feed concatenated hidden input and encoder outs to lstm
         x = self.dropout(emb)
 

@@ -4,7 +4,6 @@ import random
 from manage_data import load_datasets, index_datasets, PAD_SYMBOL
 from parsers import *
 from substitute_equiv import *
-# from train import encode_input_for_decoder, train_model_encdec, decode_output, evaluate
 from train import *
 
 PAD_POS = 0
@@ -52,9 +51,9 @@ def _parse_args():
     parser.add_argument('--recomb', dest='recomb', default=False, action="store_true", help="Run recombination instead of training")
     parser.add_argument('--copy', dest='copy', default=False, action="store_true", help="Test that the decoder model can copy")
     parser.add_argument('--eval_file', type=str, default="eval_results.txt", help="Filepath to store evaluation results")
+    parser.add_argument('--attn', dest='attn', default=False, action="store_true", help="Run decoder with attention enabled")
     args = parser.parse_args()
     return args
-
 
 
 # Takes the given Examples and their input indexer and turns them into a numpy array by padding them out to max_len.
@@ -91,10 +90,6 @@ def main(args):
     print("Input indexer: %s" % input_indexer)
     print("Output indexer: %s" % output_indexer)
     print("Here are some examples post tokenization and indexing:")
-
-    # get_states(input_indexer, output_indexer)
-    # sub_equivs(train_data_indexed, input_indexer, output_indexer)
-    # exit()
 
     # print("\n\nSOS position is {}".format(output_indexer.get_index(SOS_SYMBOL)))
     for i in range(0, min(len(train_data_indexed), 10)):

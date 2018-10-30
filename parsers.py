@@ -86,7 +86,6 @@ class Seq2SeqSemanticParser(object):
 
         return test_derivs
 
-
     def dec_and_predict(self, dec_input, dec_hidden):
         # decode_ouput embeds dec_input, then passes it and dec_hidden to the decoder model
         # hid_out is tuple, each element is 3D tensor w/ size [1 x 1 x hidden_size]
