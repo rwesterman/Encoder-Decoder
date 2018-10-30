@@ -1,3 +1,6 @@
+import random
+import numpy as np
+
 class SubbedSentence():
     def __init__(self, x_indexed, y_indexed, x_tok, y_tok):
         self.x_indexed = x_indexed
@@ -77,6 +80,20 @@ class States():
             print("check_state_exists must have either st_in_token or st_in_idx passed as argument")
             return None
 
+    def get_k_other_states(self, st_in_idx, k=3):
+        """Returns k number of other states to substitute into new sentence"""
+        choices = np.random.choice(len(self.state_in_tok), k, replace = False)
+        if st_in_idx:
+            if st_in_idx in self.state_in_idx:
+                st_pos = self.state_in_idx.index(st_in_idx)
+                st_in_tokens = [self.state_in_tok[idx] for idx in choices if idx != st_pos]
+                st_out_tokens = [self.state_out_tok[idx] for idx in choices if idx != st_pos]
+                st_in_idxs = [self.state_in_idx[idx] for idx in choices if idx != st_pos]
+                st_out_idxs = [self.state_out_idx[idx] for idx in choices if idx != st_pos]
+                return (st_in_tokens, st_out_tokens, st_in_idxs, st_out_idxs)
+            else:
+                return None
+
     def get_all_other_states(self, st_in_token = None, st_in_idx = None):
         """Determines if the checked state exists, then returns 4 lists (as a tuple) that contain all other states"""
         if st_in_token:
@@ -148,7 +165,7 @@ def sub_equivs(train_data, input_indexer, output_indexer):
                     print("State is mentioned in input tokens, but not output tokens. Skipping this instance")
                     break
                     # This returns all other states in token and index form for input and output
-                (st_in_tokens, st_out_tokens, st_in_idxs, st_out_idxs) = states.get_all_other_states(
+                (st_in_tokens, st_out_tokens, st_in_idxs, st_out_idxs) = states.get_k_other_states(
                                                                             st_in_idx=states.state_in_idx[st_idx])
 
                 for state_pos in range(len(st_in_tokens)):
