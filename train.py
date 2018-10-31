@@ -70,6 +70,12 @@ def train_model_encdec(train_data, dev_data, input_indexer, output_indexer, args
         global exact
         total_sentences = 0.0
         exact = 0.0
+
+        model_output_emb.train()
+        model_input_emb.train()
+        model_enc.train()
+        model_dec.train()
+
         print("Epoch ", epoch)
         with open(args.eval_file, "a") as f:
             f.write("Epoch {}\n".format(epoch))

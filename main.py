@@ -1,10 +1,12 @@
 import argparse
 import random
+import numpy as np
 
 from manage_data import load_datasets, index_datasets, PAD_SYMBOL
 from parsers import *
 from recombination import *
 from train import *
+
 
 PAD_POS = 0
 UNK_POS = 1
@@ -131,7 +133,7 @@ if __name__ == '__main__':
 
         # get_states(input_indexer, output_indexer)
         # sub_equivs(train_data_indexed, input_indexer, output_indexer)
-        generalize_cities(train_data_indexed, input_indexer, output_indexer)
+        generalize_entities(train_data_indexed, input_indexer, output_indexer)
     else:
         main(args)
 
