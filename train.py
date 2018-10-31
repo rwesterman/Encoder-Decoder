@@ -109,10 +109,12 @@ def train_model_encdec(train_data, dev_data, input_indexer, output_indexer, args
             parser = parsers.AttnParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
         else:
             parser = parsers.Seq2SeqSemanticParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args)
-        evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
 
         if args.copy:
             print("{}% correct on copy task".format(100*float(exact/total_sentences)))
+        else:
+            evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
+
 
     if args.copy:
         print("Done with copy task, exiting before evaluation")
@@ -169,7 +171,7 @@ def attn_forward(train_data, all_models, pair_idx, criterion, args):
     if args.copy:
         total_sentences += 1
         if gold == pred:
-            print("Gold: {}\nPred: {}".format(gold, pred))
+            # print("Gold: {}\nPred: {}".format(gold, pred))
             exact += 1
 
     return loss

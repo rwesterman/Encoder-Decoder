@@ -6,3 +6,120 @@ Epoch 1
 Total loss is 2293.704345703125
 Epoch 1
 Total loss is 2514.235595703125
+Epoch 1
+Total loss is 9799.615234375
+Epoch 2
+Total loss is 6646.8173828125
+Epoch 3
+Total loss is 5278.77685546875
+Epoch 4
+Total loss is 3696.105712890625
+Epoch 5
+Total loss is 2820.14697265625
+Epoch 6
+Total loss is 2557.746337890625
+Epoch 7
+Total loss is 2054.35400390625
+Epoch 8
+Total loss is 1762.65771484375
+Epoch 9
+Total loss is 1439.2591552734375
+Epoch 10
+Total loss is 1258.948974609375
+Epoch 11
+Total loss is 1642.973876953125
+Epoch 12
+Total loss is 1304.0594482421875
+Epoch 13
+Total loss is 1095.974853515625
+Epoch 14
+Total loss is 1032.198974609375
+Epoch 15
+Total loss is 919.2638549804688
+Epoch 16
+Total loss is 900.8404541015625
+Epoch 17
+Total loss is 761.3912353515625
+Epoch 18
+Total loss is 857.2096557617188
+Epoch 19
+Epoch 1
+Total loss is 9911.8974609375
+Epoch 2
+Total loss is 6842.34228515625
+Epoch 3
+Total loss is 5107.9375
+Epoch 4
+Total loss is 4009.03857421875
+Epoch 5
+Total loss is 3281.94384765625
+Epoch 6
+Total loss is 2926.93408203125
+Epoch 7
+Total loss is 2203.31005859375
+Epoch 8
+Total loss is 1821.1419677734375
+Epoch 9
+Total loss is 1363.0072021484375
+Epoch 10
+Total loss is 1363.7467041015625
+Epoch 11
+Total loss is 1393.0799560546875
+Epoch 12
+Total loss is 1076.9696044921875
+Epoch 13
+Total loss is 900.09814453125
+Epoch 14
+Total loss is 809.2324829101562
+Epoch 15
+Total loss is 977.4398803710938
+Epoch 16
+Total loss is 819.3652954101562
+Epoch 17
+Total loss is 663.029052734375
+Epoch 18
+Total loss is 539.6924438476562
+Epoch 19
+Total loss is 599.024658203125
+Epoch 20
+Total loss is 675.53369140625
+Epoch 21
+Total loss is 464.73468017578125
+Epoch 22
+Total loss is 661.063232421875
+Epoch 23
+Total loss is 719.6697998046875
+Epoch 24
+Total loss is 715.0519409179688
+Epoch 25
+Total loss is 405.0310974121094
+Epoch 26
+Total loss is 277.0183410644531
+Epoch 27
+Total loss is 343.2615661621094
+Epoch 28
+Total loss is 298.6560974121094
+Epoch 29
+Total loss is 401.3115539550781
+Epoch 30
+Total loss is 379.76837158203125
+Epoch 31
+Total loss is 305.4910888671875
+Epoch 32
+Total loss is 362.2497863769531
+Epoch 33
+Total loss is 383.72314453125
+Epoch 34
+Total loss is 467.2055358886719
+Epoch 35
+Total loss is 494.13909912109375
+Epoch 36
+Total loss is 307.9095764160156
+Epoch 37
+Total loss is 277.36273193359375
+Epoch 38
+Total loss is 348.2292785644531
+Epoch 39
+Total loss is 345.862548828125
+Epoch 40
+Total loss is 324.0067443847656

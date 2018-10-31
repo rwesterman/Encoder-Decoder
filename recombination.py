@@ -1,10 +1,19 @@
 from shutil import copyfile
 import numpy as np
 
-# Todo: Incorporate opening geo_train.tsv, appending, and saving as new training file
+class Entity():
+    pass
 
-# Todo: Output sequences are all surrounded by quotes " ". Why???
+class AbstractEntities():
+    def __init__(self):
+        self.state_id = []
+        self.city_no_state = []
+        self.city_w_state = []
 
+    def get_states(self):
+        state_list = "texas, colorado, nebraska, ohio, washington, montana, maryland, michigan, tennessee, california, " \
+                     "illinois, georgia, alabama, kansas, oregon, missouri, kentucky, alaska, wyoming, delaware, wisconsin, louisiana, " \
+                     "pennsylvania, arkansas, oklahoma, utah, arizona".split(", ")
 
 class SubbedSentence():
     def __init__(self, x_indexed, y_indexed, x_tok, y_tok):
