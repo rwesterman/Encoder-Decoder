@@ -14,10 +14,10 @@ class State():
         self.state_out_idx = self.get_out_indexes(self.state_out)
 
     def get_in_indexes(self, in_toks):
-        return [self.input_indexer.get_index(x) for x in in_toks]
+        return [self.input_indexer.get_index(x, False) for x in in_toks]
 
     def get_out_indexes(self, out_toks):
-        return [self.output_indexer.get_index(x) for x in out_toks]
+        return [self.output_indexer.get_index(x, False) for x in out_toks]
 
 class City():
     def __init__(self, city_in, city_out, state_out, input_indexer, output_indexer, state_in = None):
@@ -39,10 +39,17 @@ class City():
             self.state_in_idx = None
 
     def get_in_indexes(self, in_toks):
-        return [self.input_indexer.get_index(x) for x in in_toks]
+        in_idx = [self.input_indexer.get_index(x, False) for x in in_toks]
+        if -1 in in_idx:
+            print("Indexer attribution error")
+        return in_idx
 
     def get_out_indexes(self, out_toks):
-        return [self.output_indexer.get_index(x) for x in out_toks]
+        out_idx = [self.output_indexer.get_index(x, False) for x in out_toks]
+        if -1 in out_idx:
+            print("Indexer attribution error")
+
+        return out_idx
 
     def __key(self):
         full_list = self.city_in + self.city_out + self.state_out
@@ -116,8 +123,6 @@ def recomb_entities(city_exs, state_exs, cities, states, num_city_exs, num_state
 
     out_examples.extend(recomb_cities(city_exs, cities, rand_city_sents))
     out_examples.extend(recomb_states(state_exs, states, rand_state_sents))
-    for ex in out_examples:
-        print(" ".join(ex.x_tok))
     return out_examples
 
 def recomb_states(state_exs, states, rand_state_sents):
@@ -195,6 +200,7 @@ def generalize_entities(train_data, input_indexer, output_indexer):
     maybe_add_feature([], input_indexer, True, "STATEID")
     maybe_add_feature([], output_indexer, True, "STATEID")
 
+
     city_examples, state_examples = [], []
     cities, states = set(), set()
 
@@ -215,8 +221,8 @@ def generalize_entities(train_data, input_indexer, output_indexer):
 def check_indexed_vs_tok(examples, input_indexer, output_indexer):
     """Test that examples are indexed properly"""
     for ex in examples:
-        indexed_x = [input_indexer.get_index(x) for x in ex.x_tok]
-        indexed_y = [output_indexer.get_index(y) for y in ex.y_tok]
+        indexed_x = [input_indexer.get_index(x, False) for x in ex.x_tok]
+        indexed_y = [output_indexer.get_index(y, False) for y in ex.y_tok]
 
         if indexed_x != ex.x_indexed:
             print("X's don't match!")

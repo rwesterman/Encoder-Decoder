@@ -229,6 +229,8 @@ def decode_forward(train_data, all_models, pair_idx, criterion,  args):
         pred_val, pred_idx = dec_out.topk(1)
 
         # calculate loss from decoder output and expected value
+        print(out_seq[out_idx].unsqueeze(0))
+
         loss += criterion(dec_out, out_seq[out_idx].unsqueeze(0))
 
         # Use teacher forcing to input correct word at next decoder step
@@ -243,7 +245,7 @@ def decode_forward(train_data, all_models, pair_idx, criterion,  args):
     if args.copy:
         total_sentences += 1
         if gold == pred:
-            print("Gold: {}\nPred: {}".format(gold, pred))
+            # print("Gold: {}\nPred: {}".format(gold, pred))
             exact += 1
 
     return loss
