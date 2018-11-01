@@ -5,7 +5,10 @@ import parsers
 from models import EmbeddingLayer, RNNEncoder, RNNDecoder, AttnDecoder
 from copy import copy, deepcopy
 from recombination import recombine
+from manage_data import maybe_add_feature
+
 import random
+
 
 PAD_POS = 0
 SOS_POS = 1
@@ -209,6 +212,7 @@ def decode_forward(train_data, all_models, pair_idx, criterion,  args):
         gold, pred = [], []
     else:
         out_seq = torch.as_tensor(train_data[pair_idx].y_indexed).view(-1)
+
     # Run encoder with embedding here:
     (enc_output_each_word, enc_context_mask, enc_final_states_reshaped) = encode_input_for_decoder(
                                                                             in_seq, in_len, model_input_emb, model_enc)
@@ -229,9 +233,8 @@ def decode_forward(train_data, all_models, pair_idx, criterion,  args):
         pred_val, pred_idx = dec_out.topk(1)
 
         # calculate loss from decoder output and expected value
-        print(out_seq[out_idx].unsqueeze(0))
-
         loss += criterion(dec_out, out_seq[out_idx].unsqueeze(0))
+        # print(out_seq[out_idx].unsqueeze(0))
 
         # Use teacher forcing to input correct word at next decoder step
         dec_input = out_seq[out_idx].unsqueeze(0).unsqueeze(0)
@@ -309,6 +312,15 @@ def render_ratio(numer, denom):
     return "%i / %i = %.3f" % (numer, denom, float(numer)/denom)
 
 def train_recombination(train_data, dev_data, input_indexer, output_indexer, args):
+    maybe_add_feature([], input_indexer, True, "CITYID")
+    maybe_add_feature([], input_indexer, True, "CITYSTATEID")
+    maybe_add_feature([], output_indexer, True, "CITYID")
+    maybe_add_feature([], output_indexer, True, "CITYSTATEID")
+
+    # Add state placeholders to indexers
+    maybe_add_feature([], input_indexer, True, "STATEID")
+    maybe_add_feature([], output_indexer, True, "STATEID")
+
     # Sort in descending order by x_indexed, essential for pack_padded_sequence
     # train_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
     # dev_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)

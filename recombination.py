@@ -40,14 +40,14 @@ class City():
 
     def get_in_indexes(self, in_toks):
         in_idx = [self.input_indexer.get_index(x, False) for x in in_toks]
-        if -1 in in_idx:
-            print("Indexer attribution error")
+        # if -1 in in_idx:
+        #     print("Indexer attribution error")
         return in_idx
 
     def get_out_indexes(self, out_toks):
         out_idx = [self.output_indexer.get_index(x, False) for x in out_toks]
-        if -1 in out_idx:
-            print("Indexer attribution error")
+        # if -1 in out_idx:
+        #     print("Indexer attribution error")
 
         return out_idx
 
@@ -191,15 +191,14 @@ def recomb_cities(city_exs, cities, rand_city_sents):
 
 def generalize_entities(train_data, input_indexer, output_indexer):
     # Add city placeholders to indexers
-    maybe_add_feature([], input_indexer, True, "CITYID")
-    maybe_add_feature([], input_indexer, True, "CITYSTATEID")
-    maybe_add_feature([], output_indexer, True, "CITYID")
-    maybe_add_feature([], output_indexer, True, "CITYSTATEID")
-
-    # Add state placeholders to indexers
-    maybe_add_feature([], input_indexer, True, "STATEID")
-    maybe_add_feature([], output_indexer, True, "STATEID")
-
+    # maybe_add_feature([], input_indexer, True, "CITYID")
+    # maybe_add_feature([], input_indexer, True, "CITYSTATEID")
+    # maybe_add_feature([], output_indexer, True, "CITYID")
+    # maybe_add_feature([], output_indexer, True, "CITYSTATEID")
+    #
+    # # Add state placeholders to indexers
+    # maybe_add_feature([], input_indexer, True, "STATEID")
+    # maybe_add_feature([], output_indexer, True, "STATEID")
 
     city_examples, state_examples = [], []
     cities, states = set(), set()
@@ -238,10 +237,11 @@ def check_indexed_vs_tok(examples, input_indexer, output_indexer):
 
 def generalize_cities(y_tok, x_tok, y_indexed, x_indexed, input_indexer, output_indexer):
     # Get the indexes of the generalized placeholders so they can be added into indexed examples
-    in_city_idx = [input_indexer.get_index("CITYID")]
-    in_st_idx = [input_indexer.get_index("CITYSTATEID")]
-    out_city_idx = [output_indexer.get_index("CITYID")]
-    out_st_idx = [output_indexer.get_index("CITYSTATEID")]
+    in_city_idx = [input_indexer.get_index("CITYID", False)]
+    in_st_idx = [input_indexer.get_index("CITYSTATEID", False)]
+    out_city_idx = [output_indexer.get_index("CITYID", False)]
+    out_st_idx = [output_indexer.get_index("CITYSTATEID", False)]
+
 
     # Check if output contains a city id
     if "_cityid" in y_tok:
@@ -328,8 +328,8 @@ def generalize_cities(y_tok, x_tok, y_indexed, x_indexed, input_indexer, output_
         return None, None
 
 def generalize_states(y_tok, x_tok, y_indexed, x_indexed, input_indexer, output_indexer):
-    in_state_idx = [input_indexer.get_index("STATEID")]
-    out_state_idx = [output_indexer.get_index("STATEID")]
+    in_state_idx = [input_indexer.get_index("STATEID", False)]
+    out_state_idx = [output_indexer.get_index("STATEID", False)]
 
     if "_stateid" in y_tok:
         # Get index of "_stateid" token. We know the next token is "(", so set that index as well
