@@ -367,8 +367,12 @@ def train_recombination(train_data, dev_data, input_indexer, output_indexer, arg
 
             # Forward Pass
             if args.attn:
+                if epoch==1:
+                    print("Running Attention Model")
                 loss = attn_forward(train_data_recomb, all_models, pair_idx, criterion, args)
             else:
+                if epoch==1:
+                    print("Running Base Model")
                 loss = decode_forward(train_data_recomb, all_models, pair_idx, criterion, args)
             total_loss += loss
 

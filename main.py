@@ -57,6 +57,8 @@ def _parse_args():
     parser.add_argument('--abs_ent_ratio', type=float, default=0.6, help="The ratio for abstract entities in recombination. ")
     parser.add_argument('--concat_ratio', type=float, default=0.4, help="The ratio for concatentation in recombination. ")
     parser.add_argument('--recomb_size', type=int, default=400, help="The amount of recombination examples to add to training set")
+    parser.add_argument('--no_concat', dest="concat", default=True, action="store_false", help="turn off concatenation from recombination training")
+    parser.add_argument('--no_abs_ent', dest="absent", default=True, action="store_false", help="turn off Abstract Entities from recombination training")
     args = parser.parse_args()
     return args
 
