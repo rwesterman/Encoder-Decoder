@@ -94,15 +94,16 @@ def main():
     #     print("x: {}, y: {}\nx_tok: {}\ny_tok: {}".format(ex.x, ex.y, ex.x_tok, ex.y_tok))
     if args.debug:
         train_data_indexed = train_data_indexed[:20]
+        args.recomb_size = 20
 
     print("%i train exs, %i dev exs, %i input types, %i output types" % (len(train_data_indexed), len(dev_data_indexed), len(input_indexer), len(output_indexer)))
     print("Input indexer: %s" % input_indexer)
     print("Output indexer: %s" % output_indexer)
-    print("Here are some examples post tokenization and indexing:")
+    # print("Here are some examples post tokenization and indexing:")
 
     # print("\n\nSOS position is {}".format(output_indexer.get_index(SOS_SYMBOL)))
-    for i in range(0, min(len(train_data_indexed), 10)):
-        print(train_data_indexed[i])
+    # for i in range(0, min(len(train_data_indexed), 10)):
+    #     print(train_data_indexed[i])
     if args.do_nearest_neighbor:
         decoder = NearestNeighborSemanticParser(train_data_indexed)
         evaluate(dev_data_indexed, decoder, args)
