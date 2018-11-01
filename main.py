@@ -107,7 +107,7 @@ def main():
     elif args.copy:
         decoder = train_model_encdec(train_data_indexed, dev_data_indexed, input_indexer, input_indexer, args)
     elif args.recomb:
-        decoder = train_recombination(train_data_indexed, dev_data_indexed, input_indexer, input_indexer, args)
+        decoder = train_recombination(train_data_indexed, dev_data_indexed, input_indexer, output_indexer, args)
     else:
         decoder = train_model_encdec(train_data_indexed, dev_data_indexed, input_indexer, output_indexer, args)
     print("=======FINAL EVALUATION ON BLIND TEST=======")
