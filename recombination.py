@@ -78,9 +78,13 @@ def recombine(train_data, input_indexer, output_indexer, total_examples, ratios 
     city_exs, state_exs, cities, states = generalize_entities(train_data,input_indexer, output_indexer)
     # Pick a random subset of half the sentences from the training data
     concat_exs = concat2(train_data, int(total_examples*CONCAT_RATIO))
-    recomb_entities(city_exs, state_exs, list(cities), list(states), int(total_examples*CITY_RATIO), int(total_examples*STATE_RATIO))
-    # for idx in range(len(concat_exs)):
-    #     print(concat_exs[idx].y_tok)
+    rec_ents_exs = recomb_entities(city_exs, state_exs, list(cities), list(states), int(total_examples*CITY_RATIO), int(total_examples*STATE_RATIO))
+
+    recomb_examples = concat_exs + rec_ents_exs
+    # check_indexed_vs_tok(rec_ents_exs, input_indexer, output_indexer)
+    # check_indexed_vs_tok(concat_exs, input_indexer, output_indexer)
+    # check_indexed_vs_tok(recomb_examples, input_indexer, output_indexer)
+    return recomb_examples
 
 def concat2(train_data, output_number):
     concat_sents = []
@@ -91,10 +95,11 @@ def concat2(train_data, output_number):
     # Concatenate the sentences of the random choices
     for idx in range(len(sents_1)):
         new_x = train_data[sents_1[idx]].x + train_data[sents_2[idx]].x
-        new_y = train_data[sents_2[idx]].y + train_data[sents_2[idx]].y
-        new_x_tok = train_data[sents_2[idx]].x_tok + train_data[sents_2[idx]].x_tok
-        new_y_tok = train_data[sents_1[idx]].y_tok + train_data[sents_2[idx]].y_tok
-        new_x_indexed = train_data[sents_1[idx]].x_tok + train_data[sents_2[idx]].x_tok
+        new_y = train_data[sents_1[idx]].y + train_data[sents_2[idx]].y
+        new_x_tok = train_data[sents_1[idx]].x_tok + train_data[sents_2[idx]].x_tok
+        # Removing _answer from second sentence
+        new_y_tok = train_data[sents_1[idx]].y_tok + train_data[sents_2[idx]].y_tok[1:]
+        new_x_indexed = train_data[sents_1[idx]].x_indexed + train_data[sents_2[idx]].x_indexed
         # For y_indexed combination, need to remove the <EOS> token from first sentence so it is handled properly
         # Todo: Try not removing _answer token from second sentence
         new_y_indexed = train_data[sents_1[idx]].y_indexed[:-1] + train_data[sents_2[idx]].y_indexed[1:]
@@ -110,22 +115,33 @@ def recomb_entities(city_exs, state_exs, cities, states, num_city_exs, num_state
     out_examples = []
 
     out_examples.extend(recomb_cities(city_exs, cities, rand_city_sents))
+    out_examples.extend(recomb_states(state_exs, states, rand_state_sents))
     for ex in out_examples:
         print(" ".join(ex.x_tok))
-    # print(out_examples)
-    out_examples.extend([])
-
+    return out_examples
 
 def recomb_states(state_exs, states, rand_state_sents):
     out_examples = []
 
     for sidx in rand_state_sents:
         chosen_state = states[int(np.random.choice(len(states),1))]
-        gen_state_ex = deepcopy(state_exs[sidx])
+        gst_ex = deepcopy(state_exs[sidx])
 
-        stateid_y_idx = gen_state_ex.y_tok.index("STATEID")
+        stid_y_idx = gst_ex.y_tok.index("STATEID")
+        stid_x_idx = gst_ex.x_tok.index("STATEID")
 
-        # gen_state_ex.y_tok =
+        gst_ex.y_tok = gst_ex.y_tok[:stid_y_idx] + chosen_state.state_out + gst_ex.y_tok[stid_y_idx+1:]
+        gst_ex.y_indexed = gst_ex.y_indexed[:stid_y_idx] + chosen_state.state_out_idx + gst_ex.y_indexed[stid_y_idx+1:]
+
+        gst_ex.x_tok = gst_ex.x_tok[:stid_x_idx] + chosen_state.state_in + gst_ex.x_tok[stid_x_idx+1:]
+        gst_ex.x_indexed = gst_ex.x_indexed[:stid_x_idx] + chosen_state.state_in_idx + gst_ex.x_indexed[stid_x_idx+1:]
+
+        gst_ex.x = " ".join(gst_ex.x_tok)
+        gst_ex.y = " ".join(gst_ex.y_tok)
+
+        out_examples.append(gst_ex)
+
+    return out_examples
 
 def recomb_cities(city_exs, cities, rand_city_sents):
     out_examples = []
@@ -149,21 +165,11 @@ def recomb_cities(city_exs, cities, rand_city_sents):
         # Then do operation on X tokens/indices
         cityid_x_idx = gen_city_ex.x_tok.index("CITYID")
 
-        # Catch the instance where there is no state in the input tokens
-
-        try:
-            stateid_x_idx = gen_city_ex.x_tok.index("CITYSTATEID")
-        except ValueError as e:
-            stateid_x_idx = None
-
-        # [gen_city_ex.x_tok[cityid_x_idx + 1]]
-        # [gen_city_ex.x_indexed[cityid_x_idx + 1]]
         if chosen_city.state_in:
-            print(chosen_city.state_in)
             gen_city_ex.x_tok = gen_city_ex.x_tok[:cityid_x_idx] + chosen_city.city_in\
-                                + chosen_city.state_in + list(gen_city_ex.x_tok[cityid_x_idx + 2:])
+                                + chosen_city.state_in + list(gen_city_ex.x_tok[cityid_x_idx + 1:])
             gen_city_ex.x_indexed = gen_city_ex.x_indexed[:cityid_x_idx] + chosen_city.city_in_idx\
-                                    + chosen_city.state_in_idx + list(gen_city_ex.x_indexed[cityid_x_idx + 2:])
+                                    + chosen_city.state_in_idx + list(gen_city_ex.x_indexed[cityid_x_idx + 1:])
 
         # if output sequence doesn't have city,state combo, then don't include it in input sequence
         else:
@@ -171,15 +177,6 @@ def recomb_cities(city_exs, cities, rand_city_sents):
                 gen_city_ex.x_tok[cityid_x_idx + 1:])
             gen_city_ex.x_indexed = gen_city_ex.x_indexed[:cityid_x_idx] + chosen_city.city_in_idx + list(
                 gen_city_ex.x_indexed[cityid_x_idx + 1:])
-            # # If there's no stateid in city object...
-            # if stateid_x_idx:
-            #     # BUT there's a CITYSTATEID in the input sequence, then remove the CITYSTATEID from the sequence
-            #     gen_city_ex.x_tok = gen_city_ex.x_tok[:cityid_x_idx] + chosen_city.city_in + list(gen_city_ex.x_tok[stateid_x_idx + 1:])
-            #     gen_city_ex.x_indexed = gen_city_ex.x_indexed[:cityid_x_idx] + chosen_city.city_in_idx + list(gen_city_ex.x_indexed[stateid_x_idx + 1:])
-            # else:
-            #     # AND there's no CITYSTATEID in the input sequence, then include all tokens
-            #     gen_city_ex.x_tok = gen_city_ex.x_tok[:cityid_x_idx] + chosen_city.city_in + list(gen_city_ex.x_tok[cityid_x_idx + 1:])
-            #     gen_city_ex.x_indexed = gen_city_ex.x_indexed[:cityid_x_idx] + chosen_city.city_in_idx + list(gen_city_ex.x_indexed[cityid_x_idx + 1:])
 
         # Add this finalized example to the out_examples list
         gen_city_ex.x = " ".join(gen_city_ex.x_tok)
@@ -221,8 +218,11 @@ def check_indexed_vs_tok(examples, input_indexer, output_indexer):
         indexed_x = [input_indexer.get_index(x) for x in ex.x_tok]
         indexed_y = [output_indexer.get_index(y) for y in ex.y_tok]
 
-        # if indexed_x != ex.x_indexed:
-        #     print("X's don't match!")
+        if indexed_x != ex.x_indexed:
+            print("X's don't match!")
+            print("From x_tok: {}\nFrom x_idx: {}".format(" ".join(ex.x_tok), " ".join(
+                # [input_indexer.get_object(x) for x in ex.x_indexed])))
+                [input_indexer.get_object(x) for x in ex.x_indexed])))
         if indexed_y != ex.y_indexed[:-1]:
             print("Y's don't match!")
             print("From y_tok: {}\nFrom y_idx: {}".format(" ".join(ex.y_tok), " ".join([output_indexer.get_object(y) for y in ex.y_indexed])))
@@ -305,11 +305,12 @@ def generalize_cities(y_tok, x_tok, y_indexed, x_indexed, input_indexer, output_
             # if the state name is multiple words
             st_x_id = x_tok[city_pointer]
             # gen_x_tok = gen_x_tok[:city_pointer] + ["CITYSTATEID"] + gen_x_tok[city_pointer+1:]
+            gen_x_tok = gen_x_tok[:city_pointer] + gen_x_tok[city_pointer+1:]
             # gen_x_indexed = gen_x_indexed[:city_pointer] + in_st_idx + gen_x_indexed[city_pointer+1:]
+            gen_x_indexed = gen_x_indexed[:city_pointer] + gen_x_indexed[city_pointer+1:]
         else:
             st_x_id = None
 
-        # print("Modified sequences:\nInput: {}\nOutput: {}".format(gen_x_tok, gen_y_tok))
         x = " ".join(gen_x_tok)
         y = " ".join(gen_y_tok)
         # generalized_examples.append(Example(x,gen_x_tok, gen_x_indexed, y, gen_y_tok, gen_y_indexed))

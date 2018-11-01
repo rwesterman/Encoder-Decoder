@@ -54,6 +54,9 @@ def _parse_args():
     parser.add_argument('--copy', dest='copy', default=False, action="store_true", help="Test that the decoder model can copy")
     parser.add_argument('--eval_file', type=str, default="eval_results.txt", help="Filepath to store evaluation results")
     parser.add_argument('--attn', dest='attn', default=False, action="store_true", help="Run decoder with attention enabled")
+    parser.add_argument('--abs_ent_ratio', type=float, default=0.6, help="The ratio for abstract entities in recombination. ")
+    parser.add_argument('--concat_ratio', type=float, default=0.4, help="The ratio for concatentation in recombination. ")
+    parser.add_argument('--recomb_size', type=int, default=400, help="The amount of recombination examples to add to training set")
     args = parser.parse_args()
     return args
 
@@ -75,8 +78,8 @@ def make_padded_input_tensor(exs, input_indexer, max_len, reverse_input):
 def make_padded_output_tensor(exs, output_indexer, max_len):
     return np.array([[ex.y_indexed[i] if i < len(ex.y_indexed) else output_indexer.index_of(PAD_SYMBOL) for i in range(0, max_len)] for ex in exs])
 
-def main(args):
-    # args = _parse_args()
+def main():
+    args = _parse_args()
     print(args)
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -103,6 +106,8 @@ def main(args):
         evaluate(dev_data_indexed, decoder, args)
     elif args.copy:
         decoder = train_model_encdec(train_data_indexed, dev_data_indexed, input_indexer, input_indexer, args)
+    elif args.recomb:
+        decoder = train_recombination(train_data_indexed, dev_data_indexed, input_indexer, input_indexer, args)
     else:
         decoder = train_model_encdec(train_data_indexed, dev_data_indexed, input_indexer, output_indexer, args)
     print("=======FINAL EVALUATION ON BLIND TEST=======")
@@ -110,33 +115,6 @@ def main(args):
     evaluate(dev_data_indexed, decoder, args, print_output=True, outfile="geo_test_output.tsv")
 
 if __name__ == '__main__':
-    args = _parse_args()
-    if args.recomb:
-        print(args)
-        random.seed(args.seed)
-        np.random.seed(args.seed)
-        # Load the training and test data
-
-        train, dev, test = load_datasets(args.train_path, args.dev_path, args.test_path, domain=args.domain)
-        train_data_indexed, dev_data_indexed, test_data_indexed, input_indexer, output_indexer = index_datasets(train, dev,
-                                                                                                                test,
-                                                                                                                args.decoder_len_limit)
-
-        if args.debug:
-            train_data_indexed = train_data_indexed[:20]
-
-        print("%i train exs, %i dev exs, %i input types, %i output types" % (
-        len(train_data_indexed), len(dev_data_indexed), len(input_indexer), len(output_indexer)))
-        print("Input indexer: %s" % input_indexer)
-        print("Output indexer: %s" % output_indexer)
-        print("Here are some examples post tokenization and indexing:")
-
-        # get_states(input_indexer, output_indexer)
-        # sub_equivs(train_data_indexed, input_indexer, output_indexer)
-        # generalize_entities(train_data_indexed, input_indexer, output_indexer)
-        recombine(train_data_indexed,input_indexer, output_indexer, len(train_data_indexed))
-
-    else:
-        main(args)
+    main()
 
 

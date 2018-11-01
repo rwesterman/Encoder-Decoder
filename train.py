@@ -3,6 +3,9 @@ import torch
 from lf_evaluator import GeoqueryDomain
 import parsers
 from models import EmbeddingLayer, RNNEncoder, RNNDecoder, AttnDecoder
+from copy import copy, deepcopy
+from recombination import recombine
+import random
 
 PAD_POS = 0
 SOS_POS = 1
@@ -302,3 +305,98 @@ def evaluate(test_data, decoder, args, example_freq=50, print_output=True, outfi
 
 def render_ratio(numer, denom):
     return "%i / %i = %.3f" % (numer, denom, float(numer)/denom)
+
+def train_recombination(train_data, dev_data, input_indexer, output_indexer, args):
+    # Sort in descending order by x_indexed, essential for pack_padded_sequence
+    # train_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
+    # dev_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
+    ratios = [args.abs_ent_ratio/2, args.abs_ent_ratio/2, args.concat_ratio]
+    # Create model
+    model_input_emb = EmbeddingLayer(args.input_dim, len(input_indexer), args.emb_dropout)
+    model_output_emb = EmbeddingLayer(args.output_dim, len(output_indexer), args.emb_dropout)
+    model_enc = RNNEncoder(args.input_dim, args.hidden_size, args.rnn_dropout, args.bidirectional)
+    # len(output_indexer) is 153 and represents the size of the output vocabulary
+    if args.attn:
+        model_dec = AttnDecoder(args.output_dim, args.hidden_size, len(output_indexer), args, dropout=args.dec_dropout)
+    else:
+        model_dec = RNNDecoder(args.output_dim, args.hidden_size, len(output_indexer), dropout=args.dec_dropout)
+
+    # pack all models to pass to decode_forward function
+    all_models = (model_input_emb, model_output_emb, model_enc, model_dec)
+    # Create optimizers for every model
+    inp_emb_optim = torch.optim.Adam(model_input_emb.parameters(), args.lr)
+    out_emb_optim = torch.optim.Adam(model_output_emb.parameters(), args.lr)
+    enc_optim = torch.optim.Adam(model_enc.parameters(), args.lr)
+    dec_optim = torch.optim.Adam(model_dec.parameters(), args.lr)
+
+    criterion = torch.nn.NLLLoss()
+
+    # Iterate through epochs
+    for epoch in range(1, args.epochs + 1):
+        train_data_recomb = deepcopy(train_data)
+        # Add the recombination data to the training set
+        train_data_recomb.extend(recombine(train_data, input_indexer, output_indexer, args.recomb_size, ratios))
+        random.shuffle(train_data_recomb)
+
+        max_out_len = max([len(ex.y_indexed) for ex in train_data_recomb])
+        global total_sentences
+        global exact
+        total_sentences = 0.0
+        exact = 0.0
+
+        model_output_emb.train()
+        model_input_emb.train()
+        model_enc.train()
+        model_dec.train()
+
+        print("Epoch ", epoch)
+        with open(args.eval_file, "a") as f:
+            f.write("Epoch {}\n".format(epoch))
+
+        total_loss = 0.0
+        # Loop over all examples in training data
+        for pair_idx in range(len(train_data_recomb)):
+            # extract data from train_data
+            # Zero gradients
+            inp_emb_optim.zero_grad()
+            out_emb_optim.zero_grad()
+            enc_optim.zero_grad()
+            dec_optim.zero_grad()
+
+            # Forward Pass
+            if args.attn:
+                loss = attn_forward(train_data_recomb, all_models, pair_idx, criterion, args)
+            else:
+                loss = decode_forward(train_data_recomb, all_models, pair_idx, criterion, args)
+            total_loss += loss
+
+            # Backpropogation
+            loss.backward()
+
+            # Optimizer step
+            inp_emb_optim.step()
+            out_emb_optim.step()
+            enc_optim.step()
+            dec_optim.step()
+
+        with open(args.eval_file, "a") as f:
+            f.write("Total loss is {}\n".format(total_loss))
+
+        print("Total loss is {}".format(total_loss))
+
+        if args.attn:
+            parser = parsers.AttnParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args, max_output_len = max_out_len)
+        else:
+            parser = parsers.Seq2SeqSemanticParser(model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args, max_output_len=max_out_len)
+
+        if args.copy:
+            print("{}% correct on copy task".format(100*float(exact/total_sentences)))
+        else:
+            evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
+
+
+    if args.copy:
+        print("Done with copy task, exiting before evaluation")
+        exit()
+
+    return parser

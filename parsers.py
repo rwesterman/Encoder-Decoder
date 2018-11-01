@@ -36,12 +36,12 @@ class NearestNeighborSemanticParser(object):
         return test_derivs
 
 class Seq2SeqSemanticParser(object):
-    def __init__(self, model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args):
+    def __init__(self, model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args, max_output_len=65):
         self.model_dec = model_dec
         self.model_enc = model_enc
         self.model_input_emb = model_input_emb
         self.model_output_emb = model_output_emb
-        self.max_out_len = args.decoder_len_limit
+        self.max_out_len = max_output_len
         self.output_indexer = output_indexer
 
     def decode(self, test_data):
@@ -97,12 +97,12 @@ class Seq2SeqSemanticParser(object):
         return int(pred_idx), pred_val, dec_hidden
 
 class AttnParser(object):
-    def __init__(self, model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args):
+    def __init__(self, model_dec, model_enc, model_input_emb, model_output_emb, output_indexer, args, max_output_len=65):
         self.model_dec = model_dec
         self.model_enc = model_enc
         self.model_input_emb = model_input_emb
         self.model_output_emb = model_output_emb
-        self.max_out_len = args.decoder_len_limit
+        self.max_out_len = max_output_len
         self.output_indexer = output_indexer
 
     def decode(self, test_data):
