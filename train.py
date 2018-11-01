@@ -349,7 +349,7 @@ def train_recombination(train_data, dev_data, input_indexer, output_indexer, arg
     for epoch in range(1, args.epochs + 1):
         train_data_recomb = deepcopy(train_data)
         # Add the recombination data to the training set
-        train_data_recomb.extend(recombine(train_data, input_indexer, output_indexer, args.recomb_size, ratios))
+        train_data_recomb.extend(recombine(train_data, input_indexer, output_indexer, args.recomb_size, args, ratios=ratios))
         random.shuffle(train_data_recomb)
 
         max_out_len = max([len(ex.y_indexed) for ex in train_data_recomb])
