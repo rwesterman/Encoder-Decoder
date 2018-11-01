@@ -2,6 +2,14 @@
 #
 # import numpy as np
 #
+
+def find_matching_index(list1, list2):
+    """Finds all matching elements in two lists and outputs their indices in pairs"""
+    inverse_index = {element: index for index, element in enumerate(list1)}
+
+    return [(index, inverse_index[element])
+            for index, element in enumerate(list2) if element in inverse_index]
+
 # from recombination import find_matching_index
 #
 # class AbstractEntities():

@@ -1,5 +1,7 @@
 from manage_data import Example
 from utils import maybe_add_feature
+import numpy as np
+from copy import copy, deepcopy
 
 class State():
     def __init__(self, state_in, state_out, input_indexer, output_indexer):
@@ -25,13 +27,13 @@ class City():
         self.city_in = city_in
         self.city_out = city_out
         self.state_out = state_out
-        self.city_in_idx = self.get_in_indexes(city_in)
-        self.city_out_idx = self.get_out_indexes(city_out)
-        self.state_out_idx = self.get_out_indexes(state_out)
+        self.city_in_idx = self.get_in_indexes(self.city_in)
+        self.city_out_idx = self.get_out_indexes(self.city_out)
+        self.state_out_idx = self.get_out_indexes(self.state_out)
 
         if state_in:
-            self.state_in = state_in
-            self.state_in_idx = self.get_in_indexes(state_in)
+            self.state_in = [state_in]
+            self.state_in_idx = self.get_in_indexes(self.state_in)
         else:
             self.state_in = None
             self.state_in_idx = None
@@ -58,13 +60,132 @@ class City():
     def __hash__(self):
         return hash(self.__key())
 
+def recombine(train_data, input_indexer, output_indexer, total_examples, ratios = (0.3, 0.3, 0.4)):
+    """
 
-def find_matching_index(list1, list2):
-    """Finds all matching elements in two lists and outputs their indices in pairs"""
-    inverse_index = {element: index for index, element in enumerate(list1)}
+    :param train_data: list of Example objects that hold training data
+    :param input_indexer:
+    :param output_indexer:
+    :param ratios: Triple of ratio for city/state/concat examples to add. Must sum to 1, else concat will get remaining amount
+    :param total_examples: The total number of recombinant examples to add to the training set
+    :return:
+    """
+    CITY_RATIO = ratios[0]
+    STATE_RATIO = ratios[1]
+    CONCAT_RATIO = ratios[2]
 
-    return [(index, inverse_index[element])
-            for index, element in enumerate(list2) if element in inverse_index]
+    # Abstract the entities from sentences in the training data
+    city_exs, state_exs, cities, states = generalize_entities(train_data,input_indexer, output_indexer)
+    # Pick a random subset of half the sentences from the training data
+    concat_exs = concat2(train_data, int(total_examples*CONCAT_RATIO))
+    recomb_entities(city_exs, state_exs, list(cities), list(states), int(total_examples*CITY_RATIO), int(total_examples*STATE_RATIO))
+    # for idx in range(len(concat_exs)):
+    #     print(concat_exs[idx].y_tok)
+
+def concat2(train_data, output_number):
+    concat_sents = []
+    # pick random indices for first sentence and second sentence
+    sents_1 = list(np.random.choice(len(train_data), output_number))
+    sents_2 = list(np.random.choice(len(train_data), output_number))
+
+    # Concatenate the sentences of the random choices
+    for idx in range(len(sents_1)):
+        new_x = train_data[sents_1[idx]].x + train_data[sents_2[idx]].x
+        new_y = train_data[sents_2[idx]].y + train_data[sents_2[idx]].y
+        new_x_tok = train_data[sents_2[idx]].x_tok + train_data[sents_2[idx]].x_tok
+        new_y_tok = train_data[sents_1[idx]].y_tok + train_data[sents_2[idx]].y_tok
+        new_x_indexed = train_data[sents_1[idx]].x_tok + train_data[sents_2[idx]].x_tok
+        # For y_indexed combination, need to remove the <EOS> token from first sentence so it is handled properly
+        # Todo: Try not removing _answer token from second sentence
+        new_y_indexed = train_data[sents_1[idx]].y_indexed[:-1] + train_data[sents_2[idx]].y_indexed[1:]
+        # new_y_indexed = train_data[sents_1[idx]].y_indexed[:-1] + train_data[sents_2[idx]].y_indexed
+        concat_sents.append(Example(new_x, new_x_tok, new_x_indexed, new_y, new_y_tok, new_y_indexed))
+
+    return concat_sents
+
+def recomb_entities(city_exs, state_exs, cities, states, num_city_exs, num_state_exs):
+    # Randomly sample a number of indices on which to recombine sentences
+    rand_city_sents = np.random.choice(len(city_exs), num_city_exs)
+    rand_state_sents = np.random.choice(len(state_exs), num_state_exs)
+    out_examples = []
+
+    out_examples.extend(recomb_cities(city_exs, cities, rand_city_sents))
+    for ex in out_examples:
+        print(" ".join(ex.x_tok))
+    # print(out_examples)
+    out_examples.extend([])
+
+
+def recomb_states(state_exs, states, rand_state_sents):
+    out_examples = []
+
+    for sidx in rand_state_sents:
+        chosen_state = states[int(np.random.choice(len(states),1))]
+        gen_state_ex = deepcopy(state_exs[sidx])
+
+        stateid_y_idx = gen_state_ex.y_tok.index("STATEID")
+
+        # gen_state_ex.y_tok =
+
+def recomb_cities(city_exs, cities, rand_city_sents):
+    out_examples = []
+    # for each random index in rand_city_sents, get the sentence, and recombine w/ random city
+    for cidx in rand_city_sents:
+        # Pick one random city and use to populate generic sentence. chosen_city is City object
+        chosen_city = cities[int(np.random.choice(len(cities), 1))]
+        # gen_city_ex is an Example object with a generic CITYID and CITYSTATEID
+        gen_city_ex = deepcopy(city_exs[cidx])
+
+        # First do operation on Y tokens/indices
+        cityid_y_idx = gen_city_ex.y_tok.index("CITYID")
+        stateid_y_idx = cityid_y_idx + 2
+
+        # Repopulate example with chosen city
+        gen_city_ex.y_tok = gen_city_ex.y_tok[:cityid_y_idx] + chosen_city.city_out + [gen_city_ex.y_tok[cityid_y_idx+1]]\
+                            + chosen_city.state_out + gen_city_ex.y_tok[stateid_y_idx+1:]
+        gen_city_ex.y_indexed = gen_city_ex.y_indexed[:cityid_y_idx] + chosen_city.city_out_idx + [gen_city_ex.y_indexed[cityid_y_idx+1]]\
+                            + chosen_city.state_out_idx + gen_city_ex.y_indexed[stateid_y_idx+1:]
+
+        # Then do operation on X tokens/indices
+        cityid_x_idx = gen_city_ex.x_tok.index("CITYID")
+
+        # Catch the instance where there is no state in the input tokens
+
+        try:
+            stateid_x_idx = gen_city_ex.x_tok.index("CITYSTATEID")
+        except ValueError as e:
+            stateid_x_idx = None
+
+        # [gen_city_ex.x_tok[cityid_x_idx + 1]]
+        # [gen_city_ex.x_indexed[cityid_x_idx + 1]]
+        if chosen_city.state_in:
+            print(chosen_city.state_in)
+            gen_city_ex.x_tok = gen_city_ex.x_tok[:cityid_x_idx] + chosen_city.city_in\
+                                + chosen_city.state_in + list(gen_city_ex.x_tok[cityid_x_idx + 2:])
+            gen_city_ex.x_indexed = gen_city_ex.x_indexed[:cityid_x_idx] + chosen_city.city_in_idx\
+                                    + chosen_city.state_in_idx + list(gen_city_ex.x_indexed[cityid_x_idx + 2:])
+
+        # if output sequence doesn't have city,state combo, then don't include it in input sequence
+        else:
+            gen_city_ex.x_tok = gen_city_ex.x_tok[:cityid_x_idx] + chosen_city.city_in + list(
+                gen_city_ex.x_tok[cityid_x_idx + 1:])
+            gen_city_ex.x_indexed = gen_city_ex.x_indexed[:cityid_x_idx] + chosen_city.city_in_idx + list(
+                gen_city_ex.x_indexed[cityid_x_idx + 1:])
+            # # If there's no stateid in city object...
+            # if stateid_x_idx:
+            #     # BUT there's a CITYSTATEID in the input sequence, then remove the CITYSTATEID from the sequence
+            #     gen_city_ex.x_tok = gen_city_ex.x_tok[:cityid_x_idx] + chosen_city.city_in + list(gen_city_ex.x_tok[stateid_x_idx + 1:])
+            #     gen_city_ex.x_indexed = gen_city_ex.x_indexed[:cityid_x_idx] + chosen_city.city_in_idx + list(gen_city_ex.x_indexed[stateid_x_idx + 1:])
+            # else:
+            #     # AND there's no CITYSTATEID in the input sequence, then include all tokens
+            #     gen_city_ex.x_tok = gen_city_ex.x_tok[:cityid_x_idx] + chosen_city.city_in + list(gen_city_ex.x_tok[cityid_x_idx + 1:])
+            #     gen_city_ex.x_indexed = gen_city_ex.x_indexed[:cityid_x_idx] + chosen_city.city_in_idx + list(gen_city_ex.x_indexed[cityid_x_idx + 1:])
+
+        # Add this finalized example to the out_examples list
+        gen_city_ex.x = " ".join(gen_city_ex.x_tok)
+        gen_city_ex.y = " ".join(gen_city_ex.y_tok)
+        out_examples.append(gen_city_ex)
+    return out_examples
 
 def generalize_entities(train_data, input_indexer, output_indexer):
     # Add city placeholders to indexers
@@ -76,7 +197,6 @@ def generalize_entities(train_data, input_indexer, output_indexer):
     # Add state placeholders to indexers
     maybe_add_feature([], input_indexer, True, "STATEID")
     maybe_add_feature([], output_indexer, True, "STATEID")
-
 
     city_examples, state_examples = [], []
     cities, states = set(), set()
@@ -93,7 +213,7 @@ def generalize_entities(train_data, input_indexer, output_indexer):
                 state_examples.append(example)
                 states.add(state)
 
-    # check_indexed_vs_tok(examples, input_indexer, output_indexer)
+    return city_examples, state_examples, cities, states
 
 def check_indexed_vs_tok(examples, input_indexer, output_indexer):
     """Test that examples are indexed properly"""
@@ -117,9 +237,6 @@ def generalize_cities(y_tok, x_tok, y_indexed, x_indexed, input_indexer, output_
     out_city_idx = [output_indexer.get_index("CITYID")]
     out_st_idx = [output_indexer.get_index("CITYSTATEID")]
 
-
-    # generalized_examples= []
-    # cities = set()
     # Check if output contains a city id
     if "_cityid" in y_tok:
         # Get the index of the _cityid token, and make a pointer to walk through city and state
@@ -187,8 +304,8 @@ def generalize_cities(y_tok, x_tok, y_indexed, x_indexed, input_indexer, output_
         if st_y_id != ["_"]:
             # if the state name is multiple words
             st_x_id = x_tok[city_pointer]
-            gen_x_tok = gen_x_tok[:city_pointer] + ["CITYSTATEID"] + gen_x_tok[city_pointer+1:]
-            gen_x_indexed = gen_x_indexed[:city_pointer] + in_st_idx + gen_x_indexed[city_pointer+1:]
+            # gen_x_tok = gen_x_tok[:city_pointer] + ["CITYSTATEID"] + gen_x_tok[city_pointer+1:]
+            # gen_x_indexed = gen_x_indexed[:city_pointer] + in_st_idx + gen_x_indexed[city_pointer+1:]
         else:
             st_x_id = None
 
@@ -218,8 +335,7 @@ def generalize_states(y_tok, x_tok, y_indexed, x_indexed, input_indexer, output_
             state_pointer += 1
 
         close_paren_idx = state_pointer
-        state_y_id = y_tok[open_paren_idx + 1: close_paren_idx]
-        print(state_y_id)
+        state_y_id = list(y_tok[open_paren_idx + 1: close_paren_idx])
 
         gen_y_tok = y_tok[:open_paren_idx+1] + ["STATEID"] + y_tok[close_paren_idx:]
         gen_y_indexed = y_indexed[:open_paren_idx+1] + out_state_idx + y_indexed[close_paren_idx:]

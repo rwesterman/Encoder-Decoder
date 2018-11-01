@@ -133,7 +133,9 @@ if __name__ == '__main__':
 
         # get_states(input_indexer, output_indexer)
         # sub_equivs(train_data_indexed, input_indexer, output_indexer)
-        generalize_entities(train_data_indexed, input_indexer, output_indexer)
+        # generalize_entities(train_data_indexed, input_indexer, output_indexer)
+        recombine(train_data_indexed,input_indexer, output_indexer, len(train_data_indexed))
+
     else:
         main(args)
 
