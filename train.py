@@ -131,7 +131,8 @@ def train_model_encdec(train_data, dev_data, input_indexer, output_indexer, args
         else:
             pass
             # evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
-            denotation = float(evaluate(dev_data, parser, args, print_output=True))
+            denotation = evaluate(dev_data, parser, args, print_output=True)
+            denotation = float(denotation.split(" ")[-1])
             if denotataion > max_denotation:
                 max_parser = parser
                 max_denotation = denotation
@@ -428,6 +429,7 @@ def train_recombination(train_data, dev_data, input_indexer, output_indexer, arg
         else:
             # pass
             denotation = float(evaluate(dev_data, parser, args, print_output=True))
+            denotation = float(denotation.split(" ")[-1])
             if denotation > max_denotation:
                 max_parser = parser
                 max_denotation = denotation
