@@ -114,7 +114,7 @@ def main():
     else:
         decoder = train_model_encdec(train_data_indexed, dev_data_indexed, input_indexer, output_indexer, args)
     print("=======FINAL EVALUATION ON BLIND TEST=======")
-    evaluate(test_data_indexed, decoder, print_output=True, outfile="geo_test_output.tsv")
+    evaluate(test_data_indexed, decoder, args, print_output=True, outfile="geo_test_output.tsv")
     # evaluate(dev_data_indexed, decoder, args, print_output=True, outfile="geo_test_output.tsv")
 
 if __name__ == '__main__':
