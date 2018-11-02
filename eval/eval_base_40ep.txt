@@ -1,0 +1,203 @@
+Epoch 1
+Total loss is 18062.052734375
+Exact logical form matches: 0 / 120 = 0.000
+Token-level accuracy: 1380 / 3908 = 0.353
+Denotation matches: 0 / 120 = 0.000
+Epoch 2
+Total loss is 8742.5966796875
+Exact logical form matches: 0 / 120 = 0.000
+Token-level accuracy: 1411 / 3908 = 0.361
+Denotation matches: 4 / 120 = 0.033
+Epoch 3
+Total loss is 7140.65478515625
+Exact logical form matches: 0 / 120 = 0.000
+Token-level accuracy: 1485 / 3908 = 0.380
+Denotation matches: 1 / 120 = 0.008
+Epoch 4
+Total loss is 6284.59130859375
+Exact logical form matches: 0 / 120 = 0.000
+Token-level accuracy: 1544 / 3908 = 0.395
+Denotation matches: 2 / 120 = 0.017
+Epoch 5
+Total loss is 5737.859375
+Exact logical form matches: 0 / 120 = 0.000
+Token-level accuracy: 1515 / 3908 = 0.388
+Denotation matches: 2 / 120 = 0.017
+Epoch 6
+Total loss is 5178.97412109375
+Exact logical form matches: 1 / 120 = 0.008
+Token-level accuracy: 1586 / 3908 = 0.406
+Denotation matches: 3 / 120 = 0.025
+Epoch 7
+Total loss is 4849.23046875
+Exact logical form matches: 2 / 120 = 0.017
+Token-level accuracy: 1711 / 3908 = 0.438
+Denotation matches: 6 / 120 = 0.050
+Epoch 8
+Total loss is 4493.1494140625
+Exact logical form matches: 1 / 120 = 0.008
+Token-level accuracy: 1714 / 3908 = 0.439
+Denotation matches: 5 / 120 = 0.042
+Epoch 9
+Total loss is 4226.10693359375
+Exact logical form matches: 1 / 120 = 0.008
+Token-level accuracy: 1815 / 3908 = 0.464
+Denotation matches: 5 / 120 = 0.042
+Epoch 10
+Total loss is 3966.0615234375
+Exact logical form matches: 1 / 120 = 0.008
+Token-level accuracy: 1905 / 3908 = 0.487
+Denotation matches: 6 / 120 = 0.050
+Epoch 11
+Total loss is 3742.74365234375
+Exact logical form matches: 1 / 120 = 0.008
+Token-level accuracy: 2039 / 3908 = 0.522
+Denotation matches: 7 / 120 = 0.058
+Epoch 12
+Total loss is 3527.355712890625
+Exact logical form matches: 2 / 120 = 0.017
+Token-level accuracy: 2320 / 3908 = 0.594
+Denotation matches: 7 / 120 = 0.058
+Epoch 13
+Total loss is 3434.200439453125
+Exact logical form matches: 2 / 120 = 0.017
+Token-level accuracy: 2347 / 3908 = 0.601
+Denotation matches: 7 / 120 = 0.058
+Epoch 14
+Total loss is 3201.236572265625
+Exact logical form matches: 2 / 120 = 0.017
+Token-level accuracy: 2251 / 3908 = 0.576
+Denotation matches: 6 / 120 = 0.050
+Epoch 15
+Total loss is 3077.92822265625
+Exact logical form matches: 1 / 120 = 0.008
+Token-level accuracy: 2466 / 3908 = 0.631
+Denotation matches: 6 / 120 = 0.050
+Epoch 16
+Total loss is 2937.54541015625
+Exact logical form matches: 2 / 120 = 0.017
+Token-level accuracy: 2472 / 3908 = 0.633
+Denotation matches: 8 / 120 = 0.067
+Epoch 17
+Total loss is 2821.87548828125
+Exact logical form matches: 4 / 120 = 0.033
+Token-level accuracy: 2519 / 3908 = 0.645
+Denotation matches: 10 / 120 = 0.083
+Epoch 18
+Total loss is 2679.503173828125
+Exact logical form matches: 1 / 120 = 0.008
+Token-level accuracy: 2462 / 3908 = 0.630
+Denotation matches: 7 / 120 = 0.058
+Epoch 19
+Total loss is 2534.890380859375
+Exact logical form matches: 2 / 120 = 0.017
+Token-level accuracy: 2598 / 3908 = 0.665
+Denotation matches: 9 / 120 = 0.075
+Epoch 20
+Total loss is 2411.15869140625
+Exact logical form matches: 4 / 120 = 0.033
+Token-level accuracy: 2482 / 3908 = 0.635
+Denotation matches: 12 / 120 = 0.100
+Epoch 21
+Total loss is 2298.48388671875
+Exact logical form matches: 5 / 120 = 0.042
+Token-level accuracy: 2593 / 3908 = 0.664
+Denotation matches: 12 / 120 = 0.100
+Epoch 22
+Total loss is 2230.768310546875
+Exact logical form matches: 4 / 120 = 0.033
+Token-level accuracy: 2595 / 3908 = 0.664
+Denotation matches: 9 / 120 = 0.075
+Epoch 23
+Total loss is 2132.98681640625
+Exact logical form matches: 4 / 120 = 0.033
+Token-level accuracy: 2649 / 3908 = 0.678
+Denotation matches: 9 / 120 = 0.075
+Epoch 24
+Total loss is 2067.7158203125
+Exact logical form matches: 2 / 120 = 0.017
+Token-level accuracy: 2591 / 3908 = 0.663
+Denotation matches: 7 / 120 = 0.058
+Epoch 25
+Total loss is 1993.6888427734375
+Exact logical form matches: 6 / 120 = 0.050
+Token-level accuracy: 2647 / 3908 = 0.677
+Denotation matches: 10 / 120 = 0.083
+Epoch 26
+Total loss is 1811.0186767578125
+Exact logical form matches: 5 / 120 = 0.042
+Token-level accuracy: 2609 / 3908 = 0.668
+Denotation matches: 8 / 120 = 0.067
+Epoch 27
+Total loss is 1830.65185546875
+Exact logical form matches: 8 / 120 = 0.067
+Token-level accuracy: 2728 / 3908 = 0.698
+Denotation matches: 14 / 120 = 0.117
+Epoch 28
+Total loss is 1741.367431640625
+Exact logical form matches: 9 / 120 = 0.075
+Token-level accuracy: 2681 / 3908 = 0.686
+Denotation matches: 14 / 120 = 0.117
+Epoch 29
+Total loss is 1661.304443359375
+Exact logical form matches: 8 / 120 = 0.067
+Token-level accuracy: 2727 / 3908 = 0.698
+Denotation matches: 11 / 120 = 0.092
+Epoch 30
+Total loss is 1572.3787841796875
+Exact logical form matches: 7 / 120 = 0.058
+Token-level accuracy: 2756 / 3908 = 0.705
+Denotation matches: 9 / 120 = 0.075
+Epoch 31
+Total loss is 1494.2882080078125
+Exact logical form matches: 11 / 120 = 0.092
+Token-level accuracy: 2872 / 3908 = 0.735
+Denotation matches: 17 / 120 = 0.142
+Epoch 32
+Total loss is 1394.7215576171875
+Exact logical form matches: 9 / 120 = 0.075
+Token-level accuracy: 2807 / 3908 = 0.718
+Denotation matches: 12 / 120 = 0.100
+Epoch 33
+Total loss is 1342.12939453125
+Exact logical form matches: 8 / 120 = 0.067
+Token-level accuracy: 2779 / 3908 = 0.711
+Denotation matches: 12 / 120 = 0.100
+Epoch 34
+Total loss is 1274.0274658203125
+Exact logical form matches: 13 / 120 = 0.108
+Token-level accuracy: 2879 / 3908 = 0.737
+Denotation matches: 15 / 120 = 0.125
+Epoch 35
+Total loss is 1215.8465576171875
+Exact logical form matches: 11 / 120 = 0.092
+Token-level accuracy: 2881 / 3908 = 0.737
+Denotation matches: 16 / 120 = 0.133
+Epoch 36
+Total loss is 1178.4237060546875
+Exact logical form matches: 15 / 120 = 0.125
+Token-level accuracy: 2962 / 3908 = 0.758
+Denotation matches: 17 / 120 = 0.142
+Epoch 37
+Total loss is 1102.2396240234375
+Exact logical form matches: 13 / 120 = 0.108
+Token-level accuracy: 2867 / 3908 = 0.734
+Denotation matches: 18 / 120 = 0.150
+Epoch 38
+Total loss is 1092.4703369140625
+Exact logical form matches: 13 / 120 = 0.108
+Token-level accuracy: 2919 / 3908 = 0.747
+Denotation matches: 14 / 120 = 0.117
+Epoch 39
+Total loss is 1052.795654296875
+Exact logical form matches: 13 / 120 = 0.108
+Token-level accuracy: 2894 / 3908 = 0.741
+Denotation matches: 18 / 120 = 0.150
+Epoch 40
+Total loss is 1013.412353515625
+Exact logical form matches: 11 / 120 = 0.092
+Token-level accuracy: 2995 / 3908 = 0.766
+Denotation matches: 15 / 120 = 0.125
+Exact logical form matches: 11 / 120 = 0.092
+Token-level accuracy: 2995 / 3908 = 0.766
+Denotation matches: 15 / 120 = 0.125

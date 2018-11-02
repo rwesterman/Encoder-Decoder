@@ -20,7 +20,7 @@ total_sentences = 0.0
 
 def _parse_args():
     parser = argparse.ArgumentParser(description='main.py')
-    
+
     # General system running and configuration options
     parser.add_argument('--do_nearest_neighbor', dest='do_nearest_neighbor', default=False, action='store_true', help='run the nearest neighbor model')
 
@@ -29,7 +29,7 @@ def _parse_args():
     parser.add_argument('--test_path', type=str, default='data/geo_test.tsv', help='path to blind test data')
     parser.add_argument('--test_output_path', type=str, default='geo_test_output.tsv', help='path to write blind test results')
     parser.add_argument('--domain', type=str, default='geo', help='domain (geo for geoquery)')
-    
+
     # Some common arguments for your convenience
     parser.add_argument('--seed', type=int, default=0, help='RNG seed (default = 0)')
     parser.add_argument('--epochs', type=int, default=5, help='num epochs to train for')
@@ -114,10 +114,8 @@ def main():
     else:
         decoder = train_model_encdec(train_data_indexed, dev_data_indexed, input_indexer, output_indexer, args)
     print("=======FINAL EVALUATION ON BLIND TEST=======")
-    # evaluate(test_data_indexed, decoder, print_output=True, outfile="geo_test_output.tsv")
-    evaluate(dev_data_indexed, decoder, args, print_output=True, outfile="geo_test_output.tsv")
+    evaluate(test_data_indexed, decoder, print_output=True, outfile="geo_test_output.tsv")
+    # evaluate(dev_data_indexed, decoder, args, print_output=True, outfile="geo_test_output.tsv")
 
 if __name__ == '__main__':
     main()
-
-
