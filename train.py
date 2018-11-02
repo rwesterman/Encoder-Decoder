@@ -131,11 +131,10 @@ def train_model_encdec(train_data, dev_data, input_indexer, output_indexer, args
         else:
             pass
             # evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
-            denotation = evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
+            denotation = evaluate(dev_data, parser, args, print_output=True)
             if denotataion > max_denotation:
                 max_parser = parser
                 max_denotation = denotation
-
 
     if args.copy:
         print("Done with copy task, exiting before evaluation")
@@ -314,6 +313,7 @@ def evaluate(test_data, decoder, args, example_freq=50, print_output=True, outfi
         print("Denotation matches: %s" % (render_ratio(num_denotation_match, len(test_data))))
     # Writes to the output file if needed
     if outfile is not None:
+        print("PRINTING OUTFILE NOW!!!")
         with open(outfile, "w") as out:
             for i, ex in enumerate(test_data):
                 out.write(ex.x + "\t" + " ".join(selected_derivs[i].y_toks) + "\n")
@@ -427,8 +427,8 @@ def train_recombination(train_data, dev_data, input_indexer, output_indexer, arg
             print("{}% correct on copy task".format(100*float(exact/total_sentences)))
         else:
             # pass
-            denotation = evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
-            if denotataion > max_denotation:
+            denotation = evaluate(dev_data, parser, args, print_output=True)
+            if denotation > max_denotation:
                 max_parser = parser
                 max_denotation = denotation
 
