@@ -67,7 +67,7 @@ class City():
     def __hash__(self):
         return hash(self.__key())
 
-def recombine(train_data, input_indexer, output_indexer, total_examples, ratios = (0.3, 0.3, 0.4)):
+def recombine(train_data, input_indexer, output_indexer, total_examples, args, ratios = (0.3, 0.3, 0.4)):
     """
 
     :param train_data: list of Example objects that hold training data
@@ -77,17 +77,26 @@ def recombine(train_data, input_indexer, output_indexer, total_examples, ratios 
     :param total_examples: The total number of recombinant examples to add to the training set
     :return:
     """
-    CITY_RATIO = ratios[0]
-    STATE_RATIO = ratios[1]
-    CONCAT_RATIO = ratios[2]
+    if not args.concat:
+        CITY_RATIO = 0.5
+        STATE_RATIO = 0.5
+    elif not args.absent:
+        CONCAT_RATIO = 1.0
+    else:
+        CITY_RATIO = ratios[0]
+        STATE_RATIO = ratios[1]
+        CONCAT_RATIO = ratios[2]
 
     # Abstract the entities from sentences in the training data
     city_exs, state_exs, cities, states = generalize_entities(train_data,input_indexer, output_indexer)
     # Pick a random subset of half the sentences from the training data
-    concat_exs = concat2(train_data, int(total_examples*CONCAT_RATIO))
-    rec_ents_exs = recomb_entities(city_exs, state_exs, list(cities), list(states), int(total_examples*CITY_RATIO), int(total_examples*STATE_RATIO))
+    recomb_examples = []
+    if args.concat:
+        recomb_examples.extend(concat2(train_data, int(total_examples*CONCAT_RATIO)))
+    if args.absent:
+        recomb_examples.extend(recomb_entities(city_exs, state_exs, list(cities), list(states),
+                                               int(total_examples*CITY_RATIO), int(total_examples*STATE_RATIO)))
 
-    recomb_examples = concat_exs + rec_ents_exs
     # check_indexed_vs_tok(rec_ents_exs, input_indexer, output_indexer)
     # check_indexed_vs_tok(concat_exs, input_indexer, output_indexer)
     # check_indexed_vs_tok(recomb_examples, input_indexer, output_indexer)
