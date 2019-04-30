@@ -118,6 +118,24 @@ def main():
     evaluate(dev_data_indexed, decoder, args, print_output=True, outfile="geo_test_output.tsv")
 
 if __name__ == '__main__':
-    main()
+    # main()
+    def get_denotations(filename):
+        with open(filename, "r") as f:
+            lines = f.readlines()
+            for line in lines:
+                if "Denotation" in line:
+                    acc = line.split(" ")[-1].strip()
+                    print(acc)
+
+
+    if __name__ == '__main__':
+        files = ["eval_attn_40ep.txt", "eval_base_40ep.txt", "eval_recomb_attn_1e-4lr.txt",
+                 "eval_recomb_attn_40ep.txt", "eval_recomb_base_100ep_2.txt",
+                 "eval_recomb_no-abs-ent_attn.txt", "eval_recomb_no-concat_attn.txt"]
+
+        for file in files:
+            print("FILE IS ", file)
+            # print(os.getcwd())
+            get_denotations(r"eval\{}".format(file))
 
 

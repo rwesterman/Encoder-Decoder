@@ -97,6 +97,12 @@ def recombine(train_data, input_indexer, output_indexer, total_examples, args, r
         recomb_examples.extend(recomb_entities(city_exs, state_exs, list(cities), list(states),
                                                int(total_examples*CITY_RATIO), int(total_examples*STATE_RATIO)))
 
+    # for ex in recomb_examples:
+    #     print(ex.x)
+    #     print(ex.y)
+    #     print()
+
+
     # check_indexed_vs_tok(rec_ents_exs, input_indexer, output_indexer)
     # check_indexed_vs_tok(concat_exs, input_indexer, output_indexer)
     # check_indexed_vs_tok(recomb_examples, input_indexer, output_indexer)
@@ -131,6 +137,10 @@ def recomb_entities(city_exs, state_exs, cities, states, num_city_exs, num_state
     out_examples = []
 
     out_examples.extend(recomb_cities(city_exs, cities, rand_city_sents))
+    for ex in out_examples:
+        print(ex.x)
+        print(ex.y)
+        print()
     out_examples.extend(recomb_states(state_exs, states, rand_state_sents))
     return out_examples
 

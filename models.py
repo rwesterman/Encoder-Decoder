@@ -6,7 +6,6 @@ from torch.autograd import Variable as Var
 
 import numpy as np
 
-
 # Embedding layer that has a lookup table of symbols that is [full_dict_size x input_dim]. Includes dropout.
 # Works for both non-batched and batched inputs
 class EmbeddingLayer(nn.Module):
@@ -149,12 +148,12 @@ class AttnDecoder(nn.Module):
         :param enc_outs: Encoder outputs for each word in the sentence. Shape is (seq x batch x embedded)
         :return:
         """
+
         # If encoder is bidirectional, then its output will be
         # [sent len x batch size x 2*hidden size], so we need to reduce 3rd dimension to hidden size
         if self.args.bidirectional:
             enc_outs = self.enc_reduce(enc_outs)
 
-        # Try Graham Neubig's approach here. Feed concatenated hidden input and encoder outs to lstm
         x = self.dropout(emb)
 
         # call this output i as seen in class notes
