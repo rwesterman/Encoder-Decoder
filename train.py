@@ -9,6 +9,8 @@ from manage_data import maybe_add_feature
 
 import random
 
+max_denotation = 0.0
+
 
 PAD_POS = 0
 SOS_POS = 1
@@ -47,6 +49,8 @@ def encode_input_for_decoder(x_tensor, inp_lens_tensor, model_input_emb, model_e
 
 def train_model_encdec(train_data, dev_data, input_indexer, output_indexer, args):
     # Sort in descending order by x_indexed, essential for pack_padded_sequence
+    global max_denotation
+
     train_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
     dev_data.sort(key=lambda ex: len(ex.x_indexed), reverse=True)
 
@@ -125,14 +129,22 @@ def train_model_encdec(train_data, dev_data, input_indexer, output_indexer, args
         if args.copy:
             print("{}% correct on copy task".format(100*float(exact/total_sentences)))
         else:
-            evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
-
+            pass
+            # evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
+            denotation = evaluate(dev_data, parser, args, print_output=True)
+            denotation = float(denotation.split(" ")[-1])
+            if denotation > max_denotation:
+                max_parser = parser
+                max_denotation = denotation
 
     if args.copy:
         print("Done with copy task, exiting before evaluation")
         exit()
 
-    return parser
+    try:
+        return max_parser
+    except:
+        return parser
 
 def attn_forward(train_data, all_models, pair_idx, criterion, args):
     global exact
@@ -302,16 +314,21 @@ def evaluate(test_data, decoder, args, example_freq=50, print_output=True, outfi
         print("Denotation matches: %s" % (render_ratio(num_denotation_match, len(test_data))))
     # Writes to the output file if needed
     if outfile is not None:
+        print("PRINTING OUTFILE NOW!!!")
         with open(outfile, "w") as out:
             for i, ex in enumerate(test_data):
                 out.write(ex.x + "\t" + " ".join(selected_derivs[i].y_toks) + "\n")
         out.close()
+
+    return render_ratio(num_denotation_match, len(test_data))
 
 
 def render_ratio(numer, denom):
     return "%i / %i = %.3f" % (numer, denom, float(numer)/denom)
 
 def train_recombination(train_data, dev_data, input_indexer, output_indexer, args):
+    global max_denotation
+
     maybe_add_feature([], input_indexer, True, "CITYID")
     maybe_add_feature([], input_indexer, True, "CITYSTATEID")
     maybe_add_feature([], output_indexer, True, "CITYID")
@@ -410,11 +427,19 @@ def train_recombination(train_data, dev_data, input_indexer, output_indexer, arg
         if args.copy:
             print("{}% correct on copy task".format(100*float(exact/total_sentences)))
         else:
-            evaluate(dev_data, parser, args, print_output=True, outfile="geo_test_output.tsv")
+            # pass
+            denotation = float(evaluate(dev_data, parser, args, print_output=True))
+            denotation = float(denotation.split(" ")[-1])
+            if denotation > max_denotation:
+                max_parser = parser
+                max_denotation = denotation
 
 
     if args.copy:
         print("Done with copy task, exiting before evaluation")
         exit()
 
-    return parser
+    try:
+        return max_parser
+    except:
+        return parser
